@@ -1,4 +1,5 @@
 import customtkinter as ctk
+from database import init_db
 
 class ParkingApp(ctk.CTk):
     def __init__(self):
@@ -80,6 +81,9 @@ class ParkingApp(ctk.CTk):
         self.current_section_label.configure(text=f"{name} Section\n(Implementation Pending)")
 
 def main():
+    # Initialize the SQLite database automatically on launch
+    init_db()
+
     # Configure appearance
     ctk.set_appearance_mode("System")
     ctk.set_default_color_theme("blue")
