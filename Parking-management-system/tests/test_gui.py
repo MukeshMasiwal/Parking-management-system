@@ -23,6 +23,8 @@ from app.gui import (
     VehicleExitView,
     ParkingRecordsView,
     ParkingSlotsView,
+    HelpView,
+    AboutView,
 )
 
 
@@ -51,14 +53,20 @@ class TestParkingGUI(unittest.TestCase):
             os.remove(self.db_path)
 
     def test_gui_initialization_and_screen_navigation(self):
-        """Verifies that all 5 required screens are created and accessible via navigation."""
-        self.assertIn("Dashboard", self.app.views)
-        self.assertIn("Vehicle Entry", self.app.views)
-        self.assertIn("Vehicle Exit", self.app.views)
-        self.assertIn("Parking Records", self.app.views)
-        self.assertIn("Parking Slots", self.app.views)
+        """Verifies that all 7 required screens are created and accessible via navigation."""
+        screens = [
+            "Dashboard",
+            "Vehicle Entry",
+            "Vehicle Exit",
+            "Parking Records",
+            "Parking Slots",
+            "Help / FAQ",
+            "About",
+        ]
+        for s in screens:
+            self.assertIn(s, self.app.views)
 
-        for screen in ["Dashboard", "Vehicle Entry", "Vehicle Exit", "Parking Records", "Parking Slots"]:
+        for screen in screens:
             self.app.select_frame(screen)
             self.app.update_idletasks()
             self.assertEqual(
@@ -237,6 +245,44 @@ class TestParkingGUI(unittest.TestCase):
         self.assertEqual(e1_slot["status"], "Occupied")
         self.assertEqual(e1_slot["vehicle_registration_number"], "TN01EV0001")
 
+    def test_help_and_about_views_content_and_config(self):
+        """Tests that Help/FAQ and About views render required content and support configuration."""
+        help_view = self.app.views["Help / FAQ"]
+        self.assertIsInstance(help_view, HelpView)
+
+        # Check all required topics exist in FAQs
+        categories = [f["category"] for f in help_view.FAQS]
+        self.assertIn("Vehicle Registration", categories)
+        self.assertIn("Duplicate Vehicles", categories)
+        self.assertIn("Facility Capacity", categories)
+        self.assertIn("Fee Calculation", categories)
+        self.assertIn("Parking Slots", categories)
+        self.assertIn("Common Errors & Troubleshooting", categories)
+
+        # Check search filtering in HelpView
+        help_view.search_entry.delete(0, "end")
+        help_view.search_entry.insert(0, "grace")
+        help_view._render_faqs()
+        self.app.update_idletasks()
+        # Card should be rendered
+        self.assertGreater(len(help_view.scroll_frame.winfo_children()), 0)
+
+        # Check AboutView content and configuration
+        about_view = self.app.views["About"]
+        self.assertIsInstance(about_view, AboutView)
+        self.assertIn("[YOUR_NAME_HERE]", about_view.dev_name_lbl.cget("text"))
+        self.assertIn("[YOUR_REGISTRATION_NO_HERE]", about_view.reg_no_lbl.cget("text"))
+
+        # Configure new developer details and verify update
+        database.set_setting("developer_name", "Jane Dev", db_path=self.db_path)
+        database.set_setting("student_reg_number", "REG-2026-999", db_path=self.db_path)
+        about_view.refresh()
+        self.app.update_idletasks()
+
+        self.assertIn("Jane Dev", about_view.dev_name_lbl.cget("text"))
+        self.assertIn("REG-2026-999", about_view.reg_no_lbl.cget("text"))
+
 
 if __name__ == "__main__":
     unittest.main()
+

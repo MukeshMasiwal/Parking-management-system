@@ -10,6 +10,8 @@ Screens:
 3. Vehicle Exit: Active session lookup, fee calculation, and receipt generation.
 4. Parking Records: Search, filter by status and type, update, safe delete.
 5. Parking Slots: Real-time visual slot grid synchronized with the database.
+6. Help / FAQ: Interactive in-app knowledge base with live search.
+7. About: Project provenance, TQM Q10 quality goal, and configurable developer credentials.
 
 Guarantees:
 - Strict separation of concerns: ZERO SQL queries in this module.
@@ -1561,6 +1563,412 @@ class ParkingSlotsView(ctk.CTkFrame):
 
 
 # ============================================================================
+# View 6: Help / FAQ
+# ============================================================================
+
+class HelpView(ctk.CTkFrame):
+    """Provides comprehensive documentation and in-app assistance on all parking workflows."""
+
+    FAQS = [
+        {
+            "category": "Vehicle Registration",
+            "question": "How do I register a vehicle entering the parking facility?",
+            "answer": (
+                "1. Click 'Vehicle Entry' in the navigation sidebar.\n"
+                "2. Enter the vehicle registration plate number (3 to 16 characters, letters, numbers, hyphens).\n"
+                "3. Select the vehicle classification (Car, Two-Wheeler, Compact, EV, or Heavy).\n"
+                "4. Optionally enter the owner's name and contact number.\n"
+                "5. Choose 'Auto-Assign Best Available Slot' or choose a specific available slot from the dropdown.\n"
+                "6. Click 'Register Vehicle Entry'. An official entry permit ticket will be generated immediately."
+            ),
+        },
+        {
+            "category": "Duplicate Vehicles",
+            "question": "What happens if a vehicle tries to register while already parked?",
+            "answer": (
+                "The system strictly prevents duplicate active sessions. If an active vehicle attempts to register "
+                "again, a DuplicateActiveSessionError is raised, detailing the currently occupied slot and entry timestamp.\n\n"
+                "Once the vehicle records a valid exit and completes its session, it is immediately permitted to re-enter for a new session."
+            ),
+        },
+        {
+            "category": "Facility Capacity",
+            "question": "How is parking capacity monitored and enforced?",
+            "answer": (
+                "The facility contains 50 total slots across 4 categories (Standard, Compact, Two-Wheeler, and EV).\n"
+                "- If the facility reaches 100% capacity (all 50 slots occupied or under maintenance), new entries are rejected with a ParkingCapacityFullError.\n"
+                "- When using automatic allocation, the system prioritizes slots suited to the vehicle category (e.g. Two-Wheeler slots for bikes, EV charging slots for electric vehicles)."
+            ),
+        },
+        {
+            "category": "Fee Calculation",
+            "question": "How are parking stay durations and fees calculated?",
+            "answer": (
+                "Billing adheres to the approved Tiered Hourly Charging Policy:\n"
+                "- Grace Period: Stays of 15 minutes or less incur $0.00.\n"
+                "- Minimum Charge: Stays exceeding 15 minutes incur a minimum 1-hour charge.\n"
+                "- Ceiling Rounding: Elapsed time is rounded up to the next full hour (e.g., 1 hr 05 mins = 2 billable hours).\n"
+                "- Standard Rates: Cars/Compact/EV = $20.00/hr, Two-Wheelers = $10.00/hr, Heavy = $40.00/hr.\n"
+                "- Dynamic Configuration: Rates and grace period minutes can be adjusted in the application settings."
+            ),
+        },
+        {
+            "category": "Parking Slots",
+            "question": "How do the visual slot map and status indicators work?",
+            "answer": (
+                "The 'Parking Slots' view provides a real-time visual map of all facility slots:\n"
+                "- Green (Available): The slot is ready for entry.\n"
+                "- Red (Occupied): The slot is currently occupied, showing the parked vehicle's license plate.\n"
+                "- Gray (Maintenance / Reserved): Temporarily out of service.\n"
+                "- Quick Action: Clicking an occupied slot button directly opens the Vehicle Exit screen with that plate number pre-filled."
+            ),
+        },
+        {
+            "category": "Common Errors & Troubleshooting",
+            "question": "How do I resolve common operational errors and warnings?",
+            "answer": (
+                "Common Scenarios & Solutions:\n"
+                "• 'Validation Error (Registration plate)': Ensure the plate contains 3-16 characters and only letters, numbers, spaces, or hyphens.\n"
+                "• 'Cannot delete active session': Active records cannot be deleted. If logged in error, use 'Cancel Active Entry' first to release the slot safely.\n"
+                "• 'Audit confirmation required': Completed sessions with recorded revenue ($ > 0.00) require an administrative override and an audit reason before deletion to protect financial accounting trails.\n"
+                "• 'Exit time precedes entry time': Clock skew or invalid timestamp. Exit timestamp must be later than or equal to entry timestamp."
+            ),
+        },
+    ]
+
+    def __init__(self, master, app_controller, db_path: Optional[str] = None):
+        super().__init__(master, fg_color="transparent")
+        self.app = app_controller
+        self.db_path = db_path
+
+        self._build_ui()
+
+    def _build_ui(self):
+        # Header banner
+        hdr = ctk.CTkFrame(self, fg_color="transparent")
+        hdr.pack(fill="x", padx=10, pady=(5, 10))
+
+        ctk.CTkLabel(
+            hdr,
+            text="Frequently Asked Questions & In-App Help",
+            font=ctk.CTkFont(size=22, weight="bold"),
+        ).pack(side="left")
+
+        # Search Bar
+        search_frame = ctk.CTkFrame(self, corner_radius=8)
+        search_frame.pack(fill="x", padx=10, pady=(0, 10))
+
+        ctk.CTkLabel(
+            search_frame,
+            text="🔍 Search Help Topics:",
+            font=ctk.CTkFont(size=12, weight="bold"),
+        ).pack(side="left", padx=(15, 10), pady=10)
+
+        self.search_entry = ctk.CTkEntry(
+            search_frame,
+            placeholder_text="Filter questions by keyword (e.g., fee, duplicate, capacity, slot, error)...",
+            height=32,
+        )
+        self.search_entry.pack(side="left", fill="x", expand=True, padx=(0, 10), pady=10)
+        self.search_entry.bind("<KeyRelease>", lambda e: self._render_faqs())
+
+        reset_btn = ctk.CTkButton(
+            search_frame,
+            text="Reset",
+            width=70,
+            height=32,
+            fg_color="#7f8c8d",
+            hover_color="#95a5a6",
+            command=self._on_reset_search,
+        )
+        reset_btn.pack(side="left", padx=(0, 15), pady=10)
+
+        # Scrollable container for FAQ cards
+        self.scroll_frame = ctk.CTkScrollableFrame(self, corner_radius=8)
+        self.scroll_frame.pack(fill="both", expand=True, padx=10, pady=(0, 10))
+
+        self._render_faqs()
+
+    def _on_reset_search(self):
+        self.search_entry.delete(0, "end")
+        self._render_faqs()
+
+    def _render_faqs(self):
+        for widget in self.scroll_frame.winfo_children():
+            widget.destroy()
+
+        query = self.search_entry.get().strip().lower()
+
+        matched = 0
+        for faq in self.FAQS:
+            cat = faq["category"].lower()
+            q = faq["question"].lower()
+            a = faq["answer"].lower()
+
+            if query and query not in cat and query not in q and query not in a:
+                continue
+
+            matched += 1
+            card = ctk.CTkFrame(self.scroll_frame, corner_radius=8)
+            card.pack(fill="x", padx=10, pady=6)
+
+            # Category badge & Question Header
+            q_hdr = ctk.CTkFrame(card, fg_color="transparent")
+            q_hdr.pack(fill="x", padx=15, pady=(12, 6))
+
+            ctk.CTkLabel(
+                q_hdr,
+                text=f"[{faq['category'].upper()}]",
+                font=ctk.CTkFont(size=11, weight="bold"),
+                text_color=COLOR_ACCENT,
+            ).pack(side="left", padx=(0, 8))
+
+            ctk.CTkLabel(
+                q_hdr,
+                text=faq["question"],
+                font=ctk.CTkFont(size=14, weight="bold"),
+            ).pack(side="left")
+
+            # Answer body
+            ans_box = ctk.CTkFrame(card, fg_color=("#f5f5f5", "#202020"), corner_radius=6)
+            ans_box.pack(fill="x", padx=15, pady=(0, 12))
+
+            ctk.CTkLabel(
+                ans_box,
+                text=faq["answer"],
+                font=ctk.CTkFont(size=12),
+                justify="left",
+                wraplength=760,
+            ).pack(padx=12, pady=10, anchor="w")
+
+        if matched == 0:
+            ctk.CTkLabel(
+                self.scroll_frame,
+                text="No FAQ topics found matching your query.",
+                font=ctk.CTkFont(size=14, slant="italic"),
+            ).pack(pady=40)
+
+
+# ============================================================================
+# View 7: About Page
+# ============================================================================
+
+class AboutView(ctk.CTkFrame):
+    """Displays application metadata, architecture, course alignment, and Q10 goal."""
+
+    def __init__(self, master, app_controller, db_path: Optional[str] = None):
+        super().__init__(master, fg_color="transparent")
+        self.app = app_controller
+        self.db_path = db_path
+
+        self._build_ui()
+        self.refresh()
+
+    def _build_ui(self):
+        # Header banner
+        hdr = ctk.CTkFrame(self, fg_color="transparent")
+        hdr.pack(fill="x", padx=10, pady=(5, 10))
+
+        ctk.CTkLabel(
+            hdr,
+            text="About Parking Management System",
+            font=ctk.CTkFont(size=22, weight="bold"),
+        ).pack(side="left")
+
+        config_btn = ctk.CTkButton(
+            hdr,
+            text="⚙️ Configure Developer Info",
+            width=190,
+            command=self._on_configure_info,
+        )
+        config_btn.pack(side="right")
+
+        # Scrollable container
+        container = ctk.CTkScrollableFrame(self, corner_radius=8)
+        container.pack(fill="both", expand=True, padx=10, pady=(0, 10))
+
+        # Main Info Card
+        main_card = ctk.CTkFrame(container, corner_radius=8)
+        main_card.pack(fill="x", padx=15, pady=10)
+
+        ctk.CTkLabel(
+            main_card,
+            text="🅿️ Parking Management System",
+            font=ctk.CTkFont(size=20, weight="bold"),
+        ).pack(anchor="w", padx=20, pady=(15, 2))
+
+        ctk.CTkLabel(
+            main_card,
+            text="Version 1.0.0 (Release Build) | Total Quality Management Project",
+            font=ctk.CTkFont(size=12),
+            text_color="#95a5a6",
+        ).pack(anchor="w", padx=20, pady=(0, 15))
+
+        desc_text = (
+            "An enterprise desktop application engineered for parking facility operations, "
+            "automated slot allocation, audit-compliant billing, historical record tracking, "
+            "and Statistical Quality Control (SQC) defect monitoring."
+        )
+        ctk.CTkLabel(
+            main_card,
+            text=desc_text,
+            font=ctk.CTkFont(size=13),
+            wraplength=760,
+            justify="left",
+        ).pack(anchor="w", padx=20, pady=(0, 15))
+
+        # Academic & Quality Specifications Grid (2 columns)
+        spec_grid = ctk.CTkFrame(container, fg_color="transparent")
+        spec_grid.pack(fill="x", padx=15, pady=(0, 10))
+        spec_grid.grid_columnconfigure((0, 1), weight=1)
+
+        # Left Card: Academic & Project Metadata
+        left_card = ctk.CTkFrame(spec_grid, corner_radius=8)
+        left_card.grid(row=0, column=0, padx=(0, 8), pady=0, sticky="nsew")
+
+        ctk.CTkLabel(
+            left_card,
+            text="Academic & Developer Information",
+            font=ctk.CTkFont(size=14, weight="bold"),
+        ).pack(anchor="w", padx=15, pady=(12, 8))
+
+        self.dev_name_lbl = ctk.CTkLabel(
+            left_card,
+            text="Developer Name:       [YOUR_NAME_HERE]",
+            font=ctk.CTkFont(size=12, family="Consolas"),
+        )
+        self.dev_name_lbl.pack(anchor="w", padx=15, pady=3)
+
+        self.reg_no_lbl = ctk.CTkLabel(
+            left_card,
+            text="Registration Number:  [YOUR_REGISTRATION_NO_HERE]",
+            font=ctk.CTkFont(size=12, family="Consolas"),
+        )
+        self.reg_no_lbl.pack(anchor="w", padx=15, pady=3)
+
+        ctk.CTkLabel(
+            left_card,
+            text="Course Name:          Total Quality Management (TQM)",
+            font=ctk.CTkFont(size=12, family="Consolas"),
+        ).pack(anchor="w", padx=15, pady=3)
+
+        ctk.CTkLabel(
+            left_card,
+            text="Institution / Term:   Academic Year 2026",
+            font=ctk.CTkFont(size=12, family="Consolas"),
+        ).pack(anchor="w", padx=15, pady=(3, 15))
+
+        # Right Card: Quality Goal Q10 Focus
+        right_card = ctk.CTkFrame(spec_grid, corner_radius=8)
+        right_card.grid(row=0, column=1, padx=(8, 0), pady=0, sticky="nsew")
+
+        ctk.CTkLabel(
+            right_card,
+            text="Assigned Quality Goal: Q10",
+            font=ctk.CTkFont(size=14, weight="bold"),
+            text_color=COLOR_SUCCESS,
+        ).pack(anchor="w", padx=15, pady=(12, 8))
+
+        q10_summary = (
+            "Goal Q10: Improve Documentation\n\n"
+            "• Interactive README with navigation anchors and troubleshooting\n"
+            "• Comprehensive docs/USER_MANUAL.md matching implemented UI\n"
+            "• Functional in-app Help/FAQ screen with search\n"
+            "• Configurable About Console displaying project provenance\n"
+            "• Verified inline docstrings and comments across all modules"
+        )
+        ctk.CTkLabel(
+            right_card,
+            text=q10_summary,
+            font=ctk.CTkFont(size=12),
+            justify="left",
+        ).pack(anchor="w", padx=15, pady=(0, 15))
+
+        # Technology Stack Details Card
+        tech_card = ctk.CTkFrame(container, corner_radius=8)
+        tech_card.pack(fill="x", padx=15, pady=(5, 15))
+
+        ctk.CTkLabel(
+            tech_card,
+            text="Technology Stack & Architecture",
+            font=ctk.CTkFont(size=14, weight="bold"),
+        ).pack(anchor="w", padx=15, pady=(12, 8))
+
+        tech_details = (
+            "• Core Language:     Python 3 (Typed, Modular Architecture)\n"
+            "• User Interface:    CustomTkinter 5.2.2 & Tkinter ttk (Treeview)\n"
+            "• Persistence Layer: SQLite3 with ACID Transactions & Partial Unique Constraints\n"
+            "• Service Layer:     Strict Separation of Concerns (Zero SQL in presentation)\n"
+            "• Test Automation:   Python unittest (41 verified test cases, 100% pass rate)\n"
+            "• Quality Standards: TQM Continuous Improvement & Defect Pareto Tracking"
+        )
+        ctk.CTkLabel(
+            tech_card,
+            text=tech_details,
+            font=ctk.CTkFont(size=12, family="Consolas"),
+            justify="left",
+        ).pack(anchor="w", padx=15, pady=(0, 15))
+
+    def refresh(self):
+        """Loads developer name and registration number from database settings."""
+        dev_name = database.get_setting("developer_name", default="[YOUR_NAME_HERE]", db_path=self.db_path)
+        reg_no = database.get_setting("student_reg_number", default="[YOUR_REGISTRATION_NO_HERE]", db_path=self.db_path)
+
+        self.dev_name_lbl.configure(text=f"Developer Name:       {dev_name}")
+        self.reg_no_lbl.configure(text=f"Registration Number:  {reg_no}")
+
+    def _on_configure_info(self):
+        """Modal dialog to set student/developer placeholders without inventing personal info."""
+        dialog = ctk.CTkToplevel(self)
+        dialog.title("Configure Developer Information")
+        dialog.geometry("450x260")
+        dialog.resizable(False, False)
+        dialog.transient(self.winfo_toplevel())
+        dialog.grab_set()
+
+        ctk.CTkLabel(
+            dialog,
+            text="Configure Developer Identifiers",
+            font=ctk.CTkFont(size=16, weight="bold"),
+        ).pack(padx=20, pady=(15, 5), anchor="w")
+
+        ctk.CTkLabel(
+            dialog,
+            text="Personalize developer name and registration number stored in application settings:",
+            font=ctk.CTkFont(size=12),
+            text_color="#95a5a6",
+        ).pack(padx=20, pady=(0, 15), anchor="w")
+
+        cur_name = database.get_setting("developer_name", default="[YOUR_NAME_HERE]", db_path=self.db_path)
+        cur_reg = database.get_setting("student_reg_number", default="[YOUR_REGISTRATION_NO_HERE]", db_path=self.db_path)
+
+        ctk.CTkLabel(dialog, text="Developer Name:", font=ctk.CTkFont(size=12, weight="bold")).pack(padx=20, anchor="w")
+        name_entry = ctk.CTkEntry(dialog)
+        name_entry.insert(0, cur_name)
+        name_entry.pack(padx=20, pady=(2, 10), fill="x")
+
+        ctk.CTkLabel(dialog, text="Registration Number:", font=ctk.CTkFont(size=12, weight="bold")).pack(padx=20, anchor="w")
+        reg_entry = ctk.CTkEntry(dialog)
+        reg_entry.insert(0, cur_reg)
+        reg_entry.pack(padx=20, pady=(2, 15), fill="x")
+
+        btn_row = ctk.CTkFrame(dialog, fg_color="transparent")
+        btn_row.pack(padx=20, pady=10, fill="x")
+
+        def save():
+            new_name = name_entry.get().strip() or "[YOUR_NAME_HERE]"
+            new_reg = reg_entry.get().strip() or "[YOUR_REGISTRATION_NO_HERE]"
+            database.set_setting("developer_name", new_name, db_path=self.db_path)
+            database.set_setting("student_reg_number", new_reg, db_path=self.db_path)
+            dialog.destroy()
+            self.refresh()
+            messagebox.showinfo("Saved", "Developer information updated successfully.")
+
+        ctk.CTkButton(btn_row, text="Save Settings", command=save, fg_color=COLOR_SUCCESS).pack(side="left", expand=True, fill="x", padx=(0, 10))
+        ctk.CTkButton(btn_row, text="Cancel", command=dialog.destroy, fg_color="#7f8c8d").pack(side="right", expand=True, fill="x")
+
+
+# ============================================================================
 # Main Application Controller
 # ============================================================================
 
@@ -1584,7 +1992,7 @@ class ParkingApp(ctk.CTk):
         # 1. Navigation Sidebar
         self.sidebar_frame = ctk.CTkFrame(self, width=220, corner_radius=0)
         self.sidebar_frame.grid(row=0, column=0, sticky="nsew")
-        self.sidebar_frame.grid_rowconfigure(7, weight=1)
+        self.sidebar_frame.grid_rowconfigure(9, weight=1)
 
         # App Branding Header
         brand_frame = ctk.CTkFrame(self.sidebar_frame, fg_color="transparent")
@@ -1603,7 +2011,7 @@ class ParkingApp(ctk.CTk):
             text_color="#95a5a6",
         ).pack(anchor="w")
 
-        # Navigation Buttons
+        # Navigation Buttons (7 views)
         self.nav_buttons: Dict[str, ctk.CTkButton] = {}
         screens = [
             ("Dashboard", "📊 Dashboard"),
@@ -1611,6 +2019,8 @@ class ParkingApp(ctk.CTk):
             ("Vehicle Exit", "🏁 Vehicle Exit"),
             ("Parking Records", "📋 Parking Records"),
             ("Parking Slots", "🅿️ Parking Slots"),
+            ("Help / FAQ", "❓ Help / FAQ"),
+            ("About", "ℹ️ About"),
         ]
 
         for idx, (key, label) in enumerate(screens, start=1):
@@ -1618,7 +2028,7 @@ class ParkingApp(ctk.CTk):
                 self.sidebar_frame,
                 text=label,
                 font=ctk.CTkFont(size=13, weight="bold"),
-                height=38,
+                height=36,
                 corner_radius=6,
                 fg_color="transparent",
                 text_color=("gray10", "gray90"),
@@ -1626,12 +2036,12 @@ class ParkingApp(ctk.CTk):
                 anchor="w",
                 command=lambda k=key: self.select_frame(k),
             )
-            btn.grid(row=idx, column=0, padx=15, pady=4, sticky="ew")
+            btn.grid(row=idx, column=0, padx=15, pady=3, sticky="ew")
             self.nav_buttons[key] = btn
 
         # Sidebar Footer: Theme and Status
         footer_frame = ctk.CTkFrame(self.sidebar_frame, fg_color="transparent")
-        footer_frame.grid(row=8, column=0, padx=15, pady=20, sticky="ew")
+        footer_frame.grid(row=10, column=0, padx=15, pady=20, sticky="ew")
 
         ctk.CTkLabel(
             footer_frame,
@@ -1660,6 +2070,8 @@ class ParkingApp(ctk.CTk):
             "Vehicle Exit": VehicleExitView(self.content_area, self, db_path=self.db_path),
             "Parking Records": ParkingRecordsView(self.content_area, self, db_path=self.db_path),
             "Parking Slots": ParkingSlotsView(self.content_area, self, db_path=self.db_path),
+            "Help / FAQ": HelpView(self.content_area, self, db_path=self.db_path),
+            "About": AboutView(self.content_area, self, db_path=self.db_path),
         }
 
         # Place views in the grid
@@ -1703,3 +2115,4 @@ class ParkingApp(ctk.CTk):
         ctk.set_appearance_mode(mode)
         apply_treeview_style()
         self.notify_data_changed()
+

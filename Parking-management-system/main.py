@@ -20,6 +20,8 @@ from app.gui import (
     VehicleExitView,
     ParkingRecordsView,
     ParkingSlotsView,
+    HelpView,
+    AboutView,
 )
 
 
