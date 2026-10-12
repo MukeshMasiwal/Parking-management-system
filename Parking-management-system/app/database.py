@@ -42,4 +42,5 @@ from database import (
     delete_session_record,
     search_sessions,
     get_capacity_metrics,
+    get_slots_with_occupants,
 )

@@ -517,16 +517,17 @@ def record_vehicle_exit(
 def search_parking_records(
     keyword: Optional[str] = None,
     status: Optional[str] = None,
+    vehicle_type: Optional[str] = None,
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
     limit: int = 100,
     db_path: Optional[str] = None
 ) -> List[Dict[str, Any]]:
     """
-    Searches parking records by vehicle registration, owner, or slot number.
+    Searches parking records by vehicle registration, owner, slot number, and vehicle type.
     Returns rich dictionary representations.
     """
-    if status:
+    if status and status.upper().strip() != "ALL":
         norm_status = status.upper().strip()
         if norm_status not in ("ACTIVE", "COMPLETED", "CANCELLED"):
             raise ValidationError(f"Invalid status filter '{status}'. Must be ACTIVE, COMPLETED, or CANCELLED.")
@@ -536,6 +537,7 @@ def search_parking_records(
     rows = database.search_sessions(
         keyword=keyword,
         status=norm_status,
+        vehicle_type=vehicle_type,
         start_date=start_date,
         end_date=end_date,
         limit=limit,
@@ -581,9 +583,23 @@ def get_vehicle_history(
 
 def get_parking_capacity_status(db_path: Optional[str] = None) -> Dict[str, Any]:
     """
-    Retrieves facility capacity and real-time occupancy statistics.
+    Retrieves facility capacity and real-time occupancy statistics, including recorded revenue.
     """
     return database.get_capacity_metrics(db_path=db_path)
+
+
+def get_dashboard_metrics(db_path: Optional[str] = None) -> Dict[str, Any]:
+    """
+    Retrieves high-level summary KPIs and recorded revenue for the Dashboard.
+    """
+    return get_parking_capacity_status(db_path=db_path)
+
+
+def get_all_parking_slots(db_path: Optional[str] = None) -> List[Dict[str, Any]]:
+    """
+    Retrieves all parking slots along with current occupant details.
+    """
+    return database.get_slots_with_occupants(db_path=db_path)
 
 
 # ============================================================================

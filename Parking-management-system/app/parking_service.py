@@ -27,4 +27,6 @@ from parking_service import (
     cancel_active_session_safely,
     delete_parking_record_safely,
     SUPPORTED_VEHICLE_TYPES,
+    get_dashboard_metrics,
+    get_all_parking_slots,
 )

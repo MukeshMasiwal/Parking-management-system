@@ -38,8 +38,10 @@ The hourly rates and grace period are configurable in the
   `$40/hour` for heavy vehicles. Rates can be changed with
   `database.set_setting`.
 
-No GUI code is required to use the service layer. The executable checks are in
-[`tests/test_parking_service.py`](tests/test_parking_service.py).
+The service layer operates independently from presentation code. The complete
+desktop GUI is implemented in [`app/gui.py`](app/gui.py) and launched via [`main.py`](main.py),
+featuring Dashboard, Vehicle Entry, Vehicle Exit, Parking Records, and Parking Slots views.
+The executable test suites are located in [`tests/`](tests/).
 
 ## Setup Instructions
 

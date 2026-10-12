@@ -832,13 +832,14 @@ def delete_session_record(session_id: int, db_path: Optional[str] = None) -> Non
 def search_sessions(
     keyword: Optional[str] = None,
     status: Optional[str] = None,
+    vehicle_type: Optional[str] = None,
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
     limit: int = 100,
     db_path: Optional[str] = None
 ) -> List[sqlite3.Row]:
     """
-    Searches parking sessions with optional keyword, status, and date range filters.
+    Searches parking sessions with optional keyword, status, vehicle type, and date range filters.
     All filters are parameterized to prevent SQL injection.
     """
     conn = get_connection(db_path)
@@ -854,9 +855,13 @@ def search_sessions(
             )
             params.extend([term, term, term])
 
-        if status:
+        if status and status.upper().strip() != "ALL":
             conditions.append("ps.status = ?")
-            params.append(status.upper())
+            params.append(status.upper().strip())
+
+        if vehicle_type and vehicle_type.strip() and vehicle_type.strip().lower() != "all":
+            conditions.append("ps.vehicle_type = ?")
+            params.append(vehicle_type.strip())
 
         if start_date:
             conditions.append("ps.entry_time >= ?")
@@ -884,7 +889,7 @@ def search_sessions(
 
 def get_capacity_metrics(db_path: Optional[str] = None) -> Dict[str, Any]:
     """
-    Computes capacity and occupancy statistics directly from the database.
+    Computes capacity, occupancy statistics, and recorded revenue directly from the database.
     """
     conn = get_connection(db_path)
     try:
@@ -905,6 +910,17 @@ def get_capacity_metrics(db_path: Optional[str] = None) -> Dict[str, Any]:
         cursor.execute("SELECT COUNT(*) AS active_sessions FROM parking_sessions WHERE status = 'ACTIVE';")
         active_cnt = cursor.fetchone()["active_sessions"]
 
+        cursor.execute(
+            """
+            SELECT 
+                COUNT(*) AS completed_sessions,
+                COALESCE(SUM(fee), 0.0) AS recorded_revenue
+            FROM parking_sessions 
+            WHERE status = 'COMPLETED';
+            """
+        )
+        comp_row = cursor.fetchone()
+
         total = row["total_slots"] or 0
         occupied = row["occupied_slots"] or 0
         available = row["available_slots"] or 0
@@ -917,8 +933,39 @@ def get_capacity_metrics(db_path: Optional[str] = None) -> Dict[str, Any]:
             "maintenance_slots": row["maintenance_slots"] or 0,
             "reserved_slots": row["reserved_slots"] or 0,
             "active_sessions": active_cnt,
+            "completed_sessions": comp_row["completed_sessions"] or 0,
+            "recorded_revenue": round(comp_row["recorded_revenue"] or 0.0, 2),
             "occupancy_rate_percent": utilization
         }
+    finally:
+        conn.close()
+
+
+def get_slots_with_occupants(db_path: Optional[str] = None) -> List[Dict[str, Any]]:
+    """
+    Retrieves all slots joined with active session occupant details.
+    """
+    conn = get_connection(db_path)
+    try:
+        cursor = conn.cursor()
+        cursor.execute(
+            """
+            SELECT 
+                s.id,
+                s.slot_number,
+                s.slot_type,
+                s.status,
+                ps.id AS session_id,
+                ps.vehicle_registration_number,
+                ps.vehicle_type,
+                ps.entry_time
+            FROM parking_slots s
+            LEFT JOIN parking_sessions ps 
+                ON s.id = ps.slot_id AND ps.status = 'ACTIVE'
+            ORDER BY s.slot_number ASC;
+            """
+        )
+        return [dict(r) for r in cursor.fetchall()]
     finally:
         conn.close()
 
