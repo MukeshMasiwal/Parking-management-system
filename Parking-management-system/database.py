@@ -771,6 +771,158 @@ def get_session_history(
         conn.close()
 
 
+def update_session_details(
+    session_id: int,
+    vehicle_type: Optional[str] = None,
+    owner_name: Optional[str] = None,
+    owner_contact: Optional[str] = None,
+    db_path: Optional[str] = None
+) -> None:
+    """
+    Updates permitted vehicle/owner details for an existing parking session.
+    """
+    conn = get_connection(db_path)
+    try:
+        with conn:
+            cursor = conn.cursor()
+            updates = []
+            params = []
+            if vehicle_type is not None:
+                updates.append("vehicle_type = ?")
+                params.append(vehicle_type)
+            if owner_name is not None:
+                updates.append("owner_name = ?")
+                params.append(owner_name)
+            if owner_contact is not None:
+                updates.append("owner_contact = ?")
+                params.append(owner_contact)
+
+            if not updates:
+                return
+
+            now_ts = datetime.now().strftime(DATETIME_FORMAT)
+            updates.append("updated_at = ?")
+            params.append(now_ts)
+            params.append(session_id)
+
+            sql = f"UPDATE parking_sessions SET {', '.join(updates)} WHERE id = ?;"
+            cursor.execute(sql, params)
+            if cursor.rowcount == 0:
+                raise SessionNotFoundError(f"Parking session with ID {session_id} not found.")
+    finally:
+        conn.close()
+
+
+def delete_session_record(session_id: int, db_path: Optional[str] = None) -> None:
+    """
+    Deletes a session record from the database by ID.
+    Low-level data access: callers must enforce business safety rules prior to calling.
+    """
+    conn = get_connection(db_path)
+    try:
+        with conn:
+            cursor = conn.cursor()
+            cursor.execute("DELETE FROM parking_sessions WHERE id = ?;", (session_id,))
+            if cursor.rowcount == 0:
+                raise SessionNotFoundError(f"Parking session with ID {session_id} not found.")
+    finally:
+        conn.close()
+
+
+def search_sessions(
+    keyword: Optional[str] = None,
+    status: Optional[str] = None,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    limit: int = 100,
+    db_path: Optional[str] = None
+) -> List[sqlite3.Row]:
+    """
+    Searches parking sessions with optional keyword, status, and date range filters.
+    All filters are parameterized to prevent SQL injection.
+    """
+    conn = get_connection(db_path)
+    try:
+        cursor = conn.cursor()
+        conditions = []
+        params = []
+
+        if keyword and keyword.strip():
+            term = f"%{keyword.strip()}%"
+            conditions.append(
+                "(ps.vehicle_registration_number LIKE ? OR ps.owner_name LIKE ? OR s.slot_number LIKE ?)"
+            )
+            params.extend([term, term, term])
+
+        if status:
+            conditions.append("ps.status = ?")
+            params.append(status.upper())
+
+        if start_date:
+            conditions.append("ps.entry_time >= ?")
+            params.append(start_date)
+
+        if end_date:
+            conditions.append("ps.entry_time <= ?")
+            params.append(end_date)
+
+        where_clause = f"WHERE {' AND '.join(conditions)}" if conditions else ""
+        sql = f"""
+            SELECT ps.*, s.slot_number, s.slot_type
+            FROM parking_sessions ps
+            LEFT JOIN parking_slots s ON ps.slot_id = s.id
+            {where_clause}
+            ORDER BY ps.entry_time DESC
+            LIMIT ?;
+        """
+        params.append(limit)
+        cursor.execute(sql, params)
+        return cursor.fetchall()
+    finally:
+        conn.close()
+
+
+def get_capacity_metrics(db_path: Optional[str] = None) -> Dict[str, Any]:
+    """
+    Computes capacity and occupancy statistics directly from the database.
+    """
+    conn = get_connection(db_path)
+    try:
+        cursor = conn.cursor()
+        cursor.execute(
+            """
+            SELECT
+                COUNT(*) AS total_slots,
+                SUM(CASE WHEN status = 'Available' THEN 1 ELSE 0 END) AS available_slots,
+                SUM(CASE WHEN status = 'Occupied' THEN 1 ELSE 0 END) AS occupied_slots,
+                SUM(CASE WHEN status = 'Maintenance' THEN 1 ELSE 0 END) AS maintenance_slots,
+                SUM(CASE WHEN status = 'Reserved' THEN 1 ELSE 0 END) AS reserved_slots
+            FROM parking_slots;
+            """
+        )
+        row = cursor.fetchone()
+
+        cursor.execute("SELECT COUNT(*) AS active_sessions FROM parking_sessions WHERE status = 'ACTIVE';")
+        active_cnt = cursor.fetchone()["active_sessions"]
+
+        total = row["total_slots"] or 0
+        occupied = row["occupied_slots"] or 0
+        available = row["available_slots"] or 0
+        utilization = round((occupied / total * 100), 1) if total > 0 else 0.0
+
+        return {
+            "total_slots": total,
+            "available_slots": available,
+            "occupied_slots": occupied,
+            "maintenance_slots": row["maintenance_slots"] or 0,
+            "reserved_slots": row["reserved_slots"] or 0,
+            "active_sessions": active_cnt,
+            "occupancy_rate_percent": utilization
+        }
+    finally:
+        conn.close()
+
+
 # ============================================================================
 # Application Settings Operations
 # ============================================================================

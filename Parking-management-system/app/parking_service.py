@@ -1,0 +1,30 @@
+"""
+app.parking_service package proxy for root parking_service module.
+"""
+from parking_service import (
+    ParkingServiceError,
+    ValidationError,
+    DuplicateActiveSessionError,
+    ParkingCapacityFullError,
+    SlotNotAvailableError,
+    SessionNotFoundError,
+    SlotNotFoundError,
+    InvalidExitError,
+    UnsafeDeletionError,
+    SlotAssignmentError,
+    validate_and_normalize_registration_number,
+    normalize_vehicle_type,
+    validate_timestamp_string,
+    calculate_duration_and_fee,
+    find_best_available_slot,
+    register_vehicle_entry,
+    record_vehicle_exit,
+    search_parking_records,
+    get_active_sessions,
+    get_vehicle_history,
+    get_parking_capacity_status,
+    update_permitted_vehicle_info,
+    cancel_active_session_safely,
+    delete_parking_record_safely,
+    SUPPORTED_VEHICLE_TYPES,
+)

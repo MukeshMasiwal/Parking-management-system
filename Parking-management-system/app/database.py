@@ -38,4 +38,8 @@ from database import (
     get_all_active_parking_records,
     update_parking_record_exit,
     delete_parking_record,
+    update_session_details,
+    delete_session_record,
+    search_sessions,
+    get_capacity_metrics,
 )
