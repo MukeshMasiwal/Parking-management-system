@@ -3,7 +3,7 @@
 [![Python Version](https://img.shields.io/badge/Python-3.8%2B-blue.svg)](https://www.python.org/)
 [![GUI Framework](https://img.shields.io/badge/GUI-CustomTkinter%205.2.2-informational.svg)](https://customtkinter.tomschimansky.com/)
 [![Database](https://img.shields.io/badge/Database-SQLite3-lightgrey.svg)](https://www.sqlite.org/)
-[![Tests](https://img.shields.io/badge/Tests-41%20Passed-brightgreen.svg)](tests/)
+[![Tests](https://img.shields.io/badge/Tests-174%20Passed-brightgreen.svg)](tests/)
 [![Quality Goal](https://img.shields.io/badge/Quality%20Goal-Q10%20Improve%20Documentation-orange.svg)](docs/USER_MANUAL.md)
 
 An enterprise desktop application engineered for parking facility operations, featuring automated slot allocation, audit-compliant fee calculations, real-time occupancy monitoring, historical session preservation, and Total Quality Management (TQM) defect logging.
@@ -12,13 +12,13 @@ An enterprise desktop application engineered for parking facility operations, fe
 
 ## Table of Contents
 - [1. Project Overview](#1-project-overview)
-- [2. Objectives & Features](#2-objectives--features)
+- [2. Objectives and Features](#2-objectives-and-features)
 - [3. Technology Stack](#3-technology-stack)
 - [4. Prerequisites](#4-prerequisites)
-- [5. Installation & Execution](#5-installation--execution)
+- [5. Installation and Execution](#5-installation-and-execution)
 - [6. Folder Structure](#6-folder-structure)
 - [7. Database Overview](#7-database-overview)
-- [8. Screenshots & User Interface Layout](#8-screenshots--user-interface-layout)
+- [8. Screenshots and User Interface Layout](#8-screenshots-and-user-interface-layout)
 - [9. Testing Instructions](#9-testing-instructions)
 - [10. Troubleshooting](#10-troubleshooting)
 - [11. Links to Other Documentation](#11-links-to-other-documentation)
@@ -36,7 +36,7 @@ The **Parking Management System** is developed as part of the **Total Quality Ma
 
 ---
 
-## 2. Objectives & Features
+## 2. Objectives and Features
 
 ### Core Objectives
 1. Eliminate manual paper ticketing and automate parking fee computation.
@@ -47,11 +47,11 @@ The **Parking Management System** is developed as part of the **Total Quality Ma
 ### Key Implemented Features
 - **📊 Real-Time Dashboard:** Displays total capacity, available slots, occupied slots, currently parked vehicles, completed sessions, and live recorded revenue.
 - **🚗 Intelligent Vehicle Entry:** Validates registration plate formats (3–16 characters) and automatically allocates slots based on vehicle classification preferences.
-- **🏁 Vehicle Exit & Billing:** Automated duration computation, tiered rate calculation, 15-minute free grace period, operator discount support, and official receipt generation.
+- **🏁 Vehicle Exit and Billing:** Automated duration computation, tiered rate calculation, 15-minute free grace period, operator discount support, and official receipt generation.
 - **📋 Parking Records Management:** Parameterized search by keyword (plate/owner/slot), status filtering (`ACTIVE`, `COMPLETED`, `CANCELLED`), vehicle type filtering, permitted record updates, and compliance-guarded safe deletion.
 - **🅿️ Interactive Parking Slots Map:** Visual 5-column grid color-coding available (green), occupied (red), and maintenance (gray) bays with one-click exit navigation.
-- **❓ In-App Help & FAQ Screen:** Searchable in-app knowledge base covering registration, capacity thresholds, billing policies, and error recovery.
-- **ℹ️ Configurable About Page:** Displays academic provenance, version specifications, and configurable placeholders for developer name and student registration number.
+- **❓ In-App Help & FAQ Screen:** Searchable in-app knowledge base covering registration, duplicate prevention, capacity thresholds, billing policies, slot color meanings, and error recovery.
+- **ℹ️ Configurable About Page:** Displays academic provenance, version specifications, course name, Q10 quality goals, and configurable placeholders for developer name and student registration number.
 
 ---
 
@@ -62,8 +62,8 @@ The **Parking Management System** is developed as part of the **Total Quality Ma
 | **Language** | Python 3.8+ | Strongly typed, modular application logic |
 | **GUI Framework** | CustomTkinter 5.2.2 & Tkinter ttk | Modern, responsive dark/light desktop user interface |
 | **Database** | SQLite3 | Persistent embedded relational database with ACID transactions |
-| **Service Layer** | Pure Python (`parking_service.py`) | Business logic validation, fee calculation engine, and capacity tracking |
-| **Test Automation** | Python `unittest` | Complete unit and integration test coverage across database, service, and GUI |
+| **Service Layer** | Pure Python ([`parking_service.py`](parking_service.py)) | Business logic validation, fee calculation engine, and capacity tracking |
+| **Test Automation** | Python `unittest` | Complete unit and integration test coverage across database, service, and GUI (174 tests) |
 
 ---
 
@@ -71,7 +71,7 @@ The **Parking Management System** is developed as part of the **Total Quality Ma
 
 Before installing, ensure your environment meets these specifications:
 - **Python:** Version 3.8 or higher installed and added to your system `PATH`.
-- **Tkinter Support:** Standard Python installations include Tkinter by default. On Debian/Ubuntu Linux systems, install via:
+- **Tkinter Support:** Standard Python installations on Windows and macOS include Tkinter by default. On Debian/Ubuntu Linux systems, install via:
   ```bash
   sudo apt-get install python3-tk
   ```
@@ -79,7 +79,7 @@ Before installing, ensure your environment meets these specifications:
 
 ---
 
-## 5. Installation & Execution
+## 5. Installation and Execution
 
 ### 1. Clone or Open the Repository
 ```bash
@@ -88,7 +88,7 @@ cd c:\Users\mukes\Desktop\TQM\Parking-management-system
 
 ### 2. Set Up a Virtual Environment (Recommended)
 ```bash
-# Windows
+# Windows PowerShell
 python -m venv venv
 .\venv\Scripts\activate
 
@@ -123,9 +123,10 @@ Parking-management-system/
 │   └── USER_MANUAL.md            # Comprehensive user manual and operational guide
 ├── tests/
 │   ├── __init__.py               # Test package initialization
-│   ├── test_database.py          # Unit tests for SQLite schema, constraints, and ACID transactions
-│   ├── test_gui.py               # Automated end-to-end GUI workflow and view integration tests
-│   └── test_parking_service.py   # Unit tests for business rules, fees, validations, and safe deletions
+│   ├── test_comprehensive.py     # 132 automated tests covering all 14 core validation topics
+│   ├── test_database.py          # 20 unit tests for SQLite schema, constraints, and ACID transactions
+│   ├── test_gui.py               # 7 automated end-to-end GUI workflow and view integration tests
+│   └── test_parking_service.py   # 15 unit tests for business rules, fees, validations, and safe deletions
 ├── database.py                   # Data Access Layer: SQLite queries, schemas, and connection pools
 ├── main.py                       # Desktop application launch script and entry point
 ├── parking_service.py            # Business Logic Layer: validation, fee engine, slot allocation
@@ -190,9 +191,9 @@ erDiagram
 
 ---
 
-## 8. Screenshots & User Interface Layout
+## 8. Screenshots and User Interface Layout
 
-The interface uses a dark/light responsive layout styled with CustomTkinter. Below are the functional layouts for each implemented screen:
+The interface uses a modern dark/light responsive layout styled with CustomTkinter. Below are the functional layouts for all implemented screens:
 
 ### Dashboard Screen Layout
 ```text
@@ -211,24 +212,117 @@ The interface uses a dark/light responsive layout styled with CustomTkinter. Bel
 +-----------------------------------------------------------------------------------------------+
 ```
 
-### Vehicle Entry & Exit Layouts
-- **Vehicle Entry:** Left form card (plate input, segmented classification selector, optional owner details, auto vs manual slot selector, register button) and Right confirmation ticket box (permit summary with session ID and assigned slot).
-- **Vehicle Exit:** Left search card (plate search, active sessions dropdown, live fee preview, operator discount input, exit button) and Right official receipt card (ASCII receipt summary showing duration, rate, and fee).
+### Vehicle Entry Screen Layout
+```text
++-----------------------------------------------------------------------------------------------+
+| [NAVIGATION SIDEBAR]     | [VEHICLE ENTRY & SLOT ALLOCATION]                                  |
+| ------------------------ | ------------------------------------------------------------------ |
+| 📊 Dashboard             | +-- Vehicle Check-In Form ---------+ +-- Entry Permit Ticket -----+ |
+| 🚗 Vehicle Entry (Active)| | License Plate: [ KA01AB1234    ] | | Session ID: #104            | |
+| 🏁 Vehicle Exit          | | Vehicle Type:  [Car|Bike|EV|...] | | Plate:      KA01AB1234      | |
+| 📋 Parking Records       | | Owner Name:    [ John Doe      ] | | Slot:       A-01 (Standard) | |
+| 🅿️ Parking Slots         | | Contact:       [ 9876543210    ] | | Entry Time: 2026-10-16 10:00| |
+| ❓ Help / FAQ            | | Slot Mode:     (•) Auto  ( ) Manual | | Status:     ACTIVE (PARKED) | |
+| ℹ️ About                 | | [🚗 Register Vehicle Entry     ] | +-----------------------------+ |
+|                          | +----------------------------------+                               |
++-----------------------------------------------------------------------------------------------+
+```
+
+### Vehicle Exit Screen Layout
+```text
++-----------------------------------------------------------------------------------------------+
+| [NAVIGATION SIDEBAR]     | [VEHICLE DEPARTURE & BILLING]                                      |
+| ------------------------ | ------------------------------------------------------------------ |
+| 📊 Dashboard             | +-- Exit & Billing Form -----------+ +-- Official Parking Receipt -+ |
+| 🚗 Vehicle Entry         | | Search Plate:  [ KA01AB1234 ] [🔍] | | RECEIPT #REC-000104        | |
+| 🏁 Vehicle Exit (Active) | | Active Vehicle:[ KA01AB1234   v ] | | Vehicle:  KA01AB1234        | |
+| 📋 Parking Records       | | Duration:      1h 15m (2h billable)| | Slot:     A-01 (Released)   | |
+| 🅿️ Parking Slots         | | Hourly Rate:   $20.00/hr          | | In / Out: 10:00 -> 11:15    | |
+| ❓ Help / FAQ            | | Operator Disc: [ $0.00         ] | | Total Stay: 1h 15m          | |
+| ℹ️ About                 | | Payable Fee:   $40.00             | | Billable: 2h @ $20.00/hr    | |
+|                          | | [🏁 Process Exit & Release Slot] | | Final Paid: $40.00          | |
+|                          | +----------------------------------+ +-----------------------------+ |
++-----------------------------------------------------------------------------------------------+
+```
+
+### Parking Records Screen Layout
+```text
++-----------------------------------------------------------------------------------------------+
+| [NAVIGATION SIDEBAR]     | [PARKING RECORDS & AUDIT HISTORY]                                  |
+| ------------------------ | ------------------------------------------------------------------ |
+| 📊 Dashboard             | Search: [ keyword... ] Status: [ All v ] Type: [ All v ] [Reset]   |
+| 🚗 Vehicle Entry         | ------------------------------------------------------------------ |
+| 🏁 Vehicle Exit          | Session Table (ID, Plate, Type, Slot, Entry, Exit, Fee, Status)   |
+| 📋 Parking Records(Active| Row 104: KA01AB1234 | Car | A-01 | 10:00 | 11:15 | $40.00 | COMPLETED|
+| 🅿️ Parking Slots         | ------------------------------------------------------------------ |
+| ❓ Help / FAQ            | Actions: [✏️ Update Permitted Info] [🚫 Cancel Active] [🗑️ Delete] |
+| ℹ️ About                 |                                                                    |
++-----------------------------------------------------------------------------------------------+
+```
+
+### Parking Slots Visual Map Layout
+```text
++-----------------------------------------------------------------------------------------------+
+| [NAVIGATION SIDEBAR]     | [PARKING SLOTS REAL-TIME VISUAL MAP]                               |
+| ------------------------ | ------------------------------------------------------------------ |
+| 📊 Dashboard             | Type Filter: [ All v ] Status Filter: [ All v ] [🔄 Sync Database]  |
+| 🚗 Vehicle Entry         | ------------------------------------------------------------------ |
+| 🏁 Vehicle Exit          | [A-01 Car]   [A-02 Car]   [A-03 Car]   [B-01 Compact] [C-01 Bike]     |
+| 📋 Parking Records       | [🟢Available] [🔴KA01AB1234] [🟢Available] [🟢Available]  [🟢Available]  |
+| 🅿️ Parking Slots (Active)| (Clicking red slot button opens Vehicle Exit pre-filled with plate) |
+| ❓ Help / FAQ            |                                                                    |
+| ℹ️ About                 | Total: 50 | Available: 38 (Green) | Occupied: 12 (Red) | Maint: 0      |
++-----------------------------------------------------------------------------------------------+
+```
+
+### Help / FAQ Screen Layout
+```text
++-----------------------------------------------------------------------------------------------+
+| [NAVIGATION SIDEBAR]     | [FREQUENTLY ASKED QUESTIONS & IN-APP HELP]                         |
+| ------------------------ | ------------------------------------------------------------------ |
+| 📊 Dashboard             | 🔍 Search Topics: [ Filter by keyword (fee, slot, error)... ] [Reset]|
+| 🚗 Vehicle Entry         | ------------------------------------------------------------------ |
+| 🏁 Vehicle Exit          | [VEHICLE REGISTRATION] How do I register a vehicle?               |
+| 📋 Parking Records       |  -> 1. Click Vehicle Entry... 2. Enter plate... 3. Auto/Manual...  |
+| 🅿️ Parking Slots         | [DUPLICATE VEHICLES] What happens if already parked?               |
+| ❓ Help / FAQ (Active)   |  -> DuplicateActiveSessionError raised; slot & entry time shown    |
+| ℹ️ About                 | [FACILITY CAPACITY] / [FEE CALCULATION] / [PARKING SLOTS] / [ERRORS] |
++-----------------------------------------------------------------------------------------------+
+```
+
+### About Console Layout
+```text
++-----------------------------------------------------------------------------------------------+
+| [NAVIGATION SIDEBAR]     | [ABOUT PARKING MANAGEMENT SYSTEM]       [⚙️ Configure Developer Info] |
+| ------------------------ | ------------------------------------------------------------------ |
+| 📊 Dashboard             | 🅿️ Parking Management System - Version 1.0.0 (Release Build)        |
+| 🚗 Vehicle Entry         | Total Quality Management Project Console                           |
+| 🏁 Vehicle Exit          | +----------------------------------+ +-----------------------------+ |
+| 📋 Parking Records       | | Academic & Developer Metadata    | | Assigned Quality Goal: Q10  | |
+| 🅿️ Parking Slots         | | Developer Name: [YOUR_NAME_HERE] | | Goal: Improve Documentation | |
+| ❓ Help / FAQ            | | Reg Number:    [YOUR_REG_HERE]   | | • Interactive README        | |
+| ℹ️ About (Active)         | | Course:        TQM 2026          | | • Verified docs/USER_MANUAL | |
+|                          | +----------------------------------+ +-----------------------------+ |
++-----------------------------------------------------------------------------------------------+
+```
 
 ### Capturing Custom Screenshots
-To embed local image captures of your application instance:
-1. Run the application (`python main.py`).
-2. Capture screenshot captures of desired tabs (e.g., `Dashboard`, `VehicleEntry`, `VehicleExit`, `ParkingSlots`).
-3. Place images in your documentation directory and embed them using standard Markdown image syntax:
+To capture screenshots from your active running instance:
+1. Run the application:
+   ```bash
+   python main.py
+   ```
+2. Navigate to each screen via the left sidebar and capture the window (e.g. `Alt + PrtScn` or Snipping Tool on Windows).
+3. Save your images into a documentation directory (e.g., `docs/screenshots/`) and reference them in Markdown:
    ```markdown
-   ![Screen Name](<path-to-your-image.png>)
+   ![Dashboard Screen](docs/screenshots/dashboard.png)
    ```
 
 ---
 
 ## 9. Testing Instructions
 
-The project includes 41 executable unit and integration tests across three suites in [`tests/`](tests/).
+The repository includes a comprehensive automated test suite consisting of **174 executable tests** across 4 suites in [`tests/`](tests/).
 
 ### Run Full Test Suite
 ```bash
@@ -236,26 +330,42 @@ python -m unittest discover tests -v
 ```
 
 ### Test Suite Breakdown
-1. **[`tests/test_database.py`](tests/test_database.py) (19 tests):**
-   - Schema creation, foreign key constraints, default slot seeding.
-   - Partial unique indexes preventing duplicate active vehicles and double-booked slots.
-   - Idempotent non-destructive database re-initialization.
+1. **[`tests/test_comprehensive.py`](tests/test_comprehensive.py) (132 tests):**
+   - Covers 14 core operational topics:
+     1. Database initialization and idempotency
+     2. Valid vehicle registration and normalization
+     3. Invalid required fields and boundary checking
+     4. Duplicate active vehicle prevention
+     5. Parking capacity full error enforcement
+     6. Category-based slot allocation preference order
+     7. Parameterized vehicle and occupant search
+     8. Permitted record updates and immutable field protection
+     9. Safe deletion compliance rules (audit justification for revenue records)
+     10. Duration calculation and tiered hourly fee policies
+     11. Vehicle exit chronology and payment recording
+     12. Atomic slot release transitions
+     13. Historical session preservation
+     14. Database error handling and transaction rollbacks
+2. **[`tests/test_database.py`](tests/test_database.py) (20 tests):**
+   - SQLite schema creation, foreign key enforcement, default 50 slot seeding.
+   - Partial unique indexes (`idx_unique_active_vehicle`, `idx_unique_active_slot`).
    - TQM defect logging and severity constraint validation.
-2. **[`tests/test_parking_service.py`](tests/test_parking_service.py) (15 tests):**
-   - Plate validation (format, length, illegal character rejection).
-   - Capacity exhaustion error handling (`ParkingCapacityFullError`).
-   - Fee calculation policy (15-min free grace period, 1-hr minimum, ceiling rounding).
-   - Dynamic rate configuration via application settings.
-   - Safe deletion rules (active session rejection, audit reason requirement for paid sessions).
-3. **[`tests/test_gui.py`](tests/test_gui.py) (7 tests):**
+3. **[`tests/test_parking_service.py`](tests/test_parking_service.py) (15 tests):**
+   - Plate validation (length 3-16 chars, allowed character set).
+   - Capacity exhaustion handling (`ParkingCapacityFullError`).
+   - Fee engine policies (15-min free grace period, 1-hr minimum, ceil rounding).
+   - Dynamic rate configuration via application settings table.
+   - Safe deletion rules (active session rejection, audit reason requirement).
+4. **[`tests/test_gui.py`](tests/test_gui.py) (7 tests):**
    - Screen instantiation and navigation across all 7 views.
-   - Real-time KPI synchronization with backend data.
+   - Real-time KPI synchronization with backend SQLite data.
    - End-to-end vehicle entry, search, exit, receipt, and slot release workflows.
-   - Search filtering in Help/FAQ and developer personalization in About console.
+   - Help/FAQ live keyword search filtering.
+   - About console developer information customization dialog.
 
 ### Expected Test Output
 ```text
-Ran 41 tests in 25.486s
+Ran 174 tests in ~166s
 
 OK
 ```
@@ -268,8 +378,9 @@ OK
 | :--- | :--- | :--- |
 | `ModuleNotFoundError: No module named 'customtkinter'` | Dependency not installed in current environment | Run `pip install -r requirements.txt` within the active environment. |
 | `sqlite3.OperationalError: database is locked` | Another process holds an exclusive lock on `parking_system.db` | Close any external SQLite viewer utilities (e.g. DB Browser for SQLite) and restart. |
-| `ValidationError: Registration plate length is invalid` | Input has fewer than 3 or more than 16 characters | Enter a valid alphanumeric registration number (e.g., `MH12-AB-1234`). |
+| `ValidationError: Vehicle registration number must contain at least 3 alphanumeric characters` | Input has fewer than 3 valid alphanumeric characters | Enter a valid alphanumeric registration number (e.g., `MH12-AB-1234`). |
 | `DuplicateActiveSessionError` | Vehicle is currently recorded as parked inside | Process the vehicle's departure via **Vehicle Exit** before re-registering. |
+| `ParkingCapacityFullError` | All 50 slots are currently occupied or under maintenance | Process exits for departed vehicles to free slots before admitting new entries. |
 | `UnsafeDeletionError: Financial audit history must be preserved` | Attempted deletion of a paid completed session without audit reason | In the deletion dialog, enter an official justification (e.g., `Audited test correction`). |
 
 ---
@@ -281,6 +392,10 @@ OK
 - 🗄️ **[Database Access Layer (`database.py`)](database.py):** SQLite schema definitions, queries, and transaction management.
 - 🖥️ **[GUI Presentation Module (`app/gui.py`)](app/gui.py):** CustomTkinter view components, layouts, and navigation controller.
 - 🚀 **[Application Entry Point (`main.py`)](main.py):** Main application startup script.
+- 🧪 **[Comprehensive Automated Test Suite (`tests/test_comprehensive.py`)](tests/test_comprehensive.py):** 132 automated tests covering all 14 core validation topics.
+- 🧪 **[Database Unit Tests (`tests/test_database.py`)](tests/test_database.py):** SQLite schema, constraints, and ACID transactions.
+- 🧪 **[Service Unit Tests (`tests/test_parking_service.py`)](tests/test_parking_service.py):** Business rules, validations, and fee logic.
+- 🧪 **[GUI Automated Workflow Tests (`tests/test_gui.py`)](tests/test_gui.py):** End-to-end interface navigation and workflows.
 
 ---
 

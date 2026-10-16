@@ -7,35 +7,35 @@
 ---
 
 ## Table of Contents
-1. [System Overview & Purpose](#1-system-overview--purpose)
-2. [Prerequisites & System Requirements](#2-prerequisites--system-requirements)
-3. [Installation & Setup](#3-installation--setup)
+1. [System Overview and Purpose](#1-system-overview-and-purpose)
+2. [Prerequisites and System Requirements](#2-prerequisites-and-system-requirements)
+3. [Installation and Setup](#3-installation-and-setup)
 4. [Application Startup](#4-application-startup)
-5. [Interface Architecture & Navigation](#5-interface-architecture--navigation)
+5. [Interface Architecture and Navigation](#5-interface-architecture-and-navigation)
 6. [Dashboard Walkthrough](#6-dashboard-walkthrough)
-7. [Vehicle Entry & Slot Allocation](#7-vehicle-entry--slot-allocation)
-8. [Vehicle Exit & Billing Procedure](#8-vehicle-exit--billing-procedure)
-9. [Fee Calculation Engine & Charging Rules](#9-fee-calculation-engine--charging-rules)
+7. [Vehicle Entry and Slot Allocation](#7-vehicle-entry-and-slot-allocation)
+8. [Vehicle Exit and Billing Procedure](#8-vehicle-exit-and-billing-procedure)
+9. [Fee Calculation Engine and Charging Rules](#9-fee-calculation-engine-and-charging-rules)
 10. [Parking Records Management](#10-parking-records-management)
 11. [Parking Slots Visual Map](#11-parking-slots-visual-map)
-12. [In-App Help & FAQ Screen](#12-in-app-help--faq-screen)
-13. [About Page & Developer Configuration](#13-about-page--developer-configuration)
-14. [Troubleshooting & Error Recovery](#14-troubleshooting--error-recovery)
+12. [In-App Help and FAQ Screen](#12-in-app-help-and-faq-screen)
+13. [About Page and Developer Configuration](#13-about-page-and-developer-configuration)
+14. [Troubleshooting and Error Recovery](#14-troubleshooting-and-error-recovery)
 
 ---
 
-## 1. System Overview & Purpose
+## 1. System Overview and Purpose
 
 The **Parking Management System** is a professional desktop application engineered for managing modern parking facility operations. It integrates automated slot allocation, audit-compliant fee calculations, real-time occupancy tracking, historical session preservation, and Statistical Quality Control (SQC) defect logging into a unified CustomTkinter graphical interface.
 
 ### Core Architectural Guarantees
-- **Strict Separation of Concerns:** The graphical presentation layer contains zero embedded SQL queries and delegates all state transitions to the business logic service layer (`parking_service.py`).
+- **Strict Separation of Concerns:** The graphical presentation layer contains zero embedded SQL queries and delegates all state transitions to the business logic service layer ([`parking_service.py`](../parking_service.py)).
 - **Data Integrity:** ACID-compliant SQLite transactions and partial unique database indexes guarantee that a vehicle can never hold multiple active sessions simultaneously, and no parking slot can be double-booked.
 - **Permanent Audit Trail:** Completed and cancelled sessions remain preserved in historical storage. Billed completed records cannot be deleted without administrative confirmation and a documented audit reason.
 
 ---
 
-## 2. Prerequisites & System Requirements
+## 2. Prerequisites and System Requirements
 
 - **Operating System:** Windows 10/11, macOS 11+, or Linux (Ubuntu 20.04+ with Tkinter support).
 - **Python Version:** Python 3.8 to Python 3.12 (Python 3.10+ recommended).
@@ -47,7 +47,7 @@ The **Parking Management System** is a professional desktop application engineer
 
 ---
 
-## 3. Installation & Setup
+## 3. Installation and Setup
 
 1. **Open a terminal** and navigate to the project root directory:
    ```bash
@@ -92,7 +92,7 @@ On initial launch, the application automatically:
 
 ---
 
-## 5. Interface Architecture & Navigation
+## 5. Interface Architecture and Navigation
 
 The user interface utilizes a split-pane layout consisting of a fixed left navigation sidebar and a dynamic right content area.
 
@@ -134,7 +134,7 @@ $$\text{Occupancy Rate (\%)} = \left(\frac{\text{Occupied Slots}}{\text{Total Sl
 
 ---
 
-## 7. Vehicle Entry & Slot Allocation
+## 7. Vehicle Entry and Slot Allocation
 
 Use the **Vehicle Entry** screen when a vehicle arrives at the facility entrance.
 
@@ -176,7 +176,7 @@ Upon success, the right card generates an official permit summary displaying:
 
 ---
 
-## 8. Vehicle Exit & Billing Procedure
+## 8. Vehicle Exit and Billing Procedure
 
 Use the **Vehicle Exit** screen when a parked vehicle departs from the facility.
 
@@ -208,7 +208,7 @@ Upon checkout, the system:
 
 ---
 
-## 9. Fee Calculation Engine & Charging Rules
+## 9. Fee Calculation Engine and Charging Rules
 
 All duration and fee computations are performed strictly by the business logic layer according to the approved **Tiered Hourly Charging Policy**.
 
@@ -284,7 +284,7 @@ The **Parking Slots** view renders a visual, color-coded floor plan of all 50 sl
 
 ---
 
-## 12. In-App Help & FAQ Screen
+## 12. In-App Help and FAQ Screen
 
 Access the **❓ Help / FAQ** tab in the sidebar for immediate in-app guidance without leaving the application.
 
@@ -300,7 +300,7 @@ Access the **❓ Help / FAQ** tab in the sidebar for immediate in-app guidance w
 
 ---
 
-## 13. About Page & Developer Configuration
+## 13. About Page and Developer Configuration
 
 Access the **ℹ️ About** tab in the sidebar to view project provenance, academic course alignment, and system specifications.
 
@@ -322,7 +322,7 @@ To customize developer identifiers without editing code:
 
 ---
 
-## 14. Troubleshooting & Error Recovery
+## 14. Troubleshooting and Error Recovery
 
 ### Common Scenarios and Solutions
 
