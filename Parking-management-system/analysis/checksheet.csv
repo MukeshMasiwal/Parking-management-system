@@ -1,0 +1,3 @@
+record_type,defect_id,date_logged,category,description,severity,occurrence_count,corrective_action,status,evidence
+TEMPLATE,,,,Enter one defect or observation per row,,,,Open,Template row - replace before use
+ACTUAL_RESULT,OBS-000,2026-10-16,Test outcome,"No functional defects observed in the final automated unittest run (175 tests passed)",,0,"Continue regression testing and record any new defect separately",Closed,"python -m unittest discover -s tests -v; exit code 0"
