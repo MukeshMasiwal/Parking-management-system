@@ -3,7 +3,7 @@
 [![Python Version](https://img.shields.io/badge/Python-3.8%2B-blue.svg)](https://www.python.org/)
 [![GUI Framework](https://img.shields.io/badge/GUI-CustomTkinter%205.2.2-informational.svg)](https://customtkinter.tomschimansky.com/)
 [![Database](https://img.shields.io/badge/Database-SQLite3-lightgrey.svg)](https://www.sqlite.org/)
-[![Tests](https://img.shields.io/badge/Tests-174%20Passed-brightgreen.svg)](tests/)
+[![Tests](https://img.shields.io/badge/Tests-175%20Passed-brightgreen.svg)](tests/)
 [![Quality Goal](https://img.shields.io/badge/Quality%20Goal-Q10%20Improve%20Documentation-orange.svg)](docs/USER_MANUAL.md)
 
 An enterprise desktop application engineered for parking facility operations, featuring automated slot allocation, audit-compliant fee calculations, real-time occupancy monitoring, historical session preservation, and Total Quality Management (TQM) defect logging.
@@ -63,7 +63,7 @@ The **Parking Management System** is developed as part of the **Total Quality Ma
 | **GUI Framework** | CustomTkinter 5.2.2 & Tkinter ttk | Modern, responsive dark/light desktop user interface |
 | **Database** | SQLite3 | Persistent embedded relational database with ACID transactions |
 | **Service Layer** | Pure Python ([`parking_service.py`](parking_service.py)) | Business logic validation, fee calculation engine, and capacity tracking |
-| **Test Automation** | Python `unittest` | Complete unit and integration test coverage across database, service, and GUI (174 tests) |
+| **Test Automation** | Python `unittest` | Complete unit and integration test coverage across database, service, and GUI (175 tests) |
 
 ---
 
@@ -123,7 +123,7 @@ Parking-management-system/
 │   └── USER_MANUAL.md            # Comprehensive user manual and operational guide
 ├── tests/
 │   ├── __init__.py               # Test package initialization
-│   ├── test_comprehensive.py     # 132 automated tests covering all 14 core validation topics
+│   ├── test_comprehensive.py     # 133 automated tests covering all 14 core validation topics
 │   ├── test_database.py          # 20 unit tests for SQLite schema, constraints, and ACID transactions
 │   ├── test_gui.py               # 7 automated end-to-end GUI workflow and view integration tests
 │   └── test_parking_service.py   # 15 unit tests for business rules, fees, validations, and safe deletions
@@ -322,7 +322,7 @@ To capture screenshots from your active running instance:
 
 ## 9. Testing Instructions
 
-The repository includes a comprehensive automated test suite consisting of **174 executable tests** across 4 suites in [`tests/`](tests/).
+The repository includes a comprehensive automated test suite consisting of **175 executable tests** across 4 suites in [`tests/`](tests/).
 
 ### Run Full Test Suite
 ```bash
@@ -365,7 +365,7 @@ python -m unittest discover tests -v
 
 ### Expected Test Output
 ```text
-Ran 174 tests in ~166s
+Ran 175 tests in ~54s
 
 OK
 ```
@@ -392,7 +392,7 @@ OK
 - 🗄️ **[Database Access Layer (`database.py`)](database.py):** SQLite schema definitions, queries, and transaction management.
 - 🖥️ **[GUI Presentation Module (`app/gui.py`)](app/gui.py):** CustomTkinter view components, layouts, and navigation controller.
 - 🚀 **[Application Entry Point (`main.py`)](main.py):** Main application startup script.
-- 🧪 **[Comprehensive Automated Test Suite (`tests/test_comprehensive.py`)](tests/test_comprehensive.py):** 132 automated tests covering all 14 core validation topics.
+- 🧪 **[Comprehensive Automated Test Suite (`tests/test_comprehensive.py`)](tests/test_comprehensive.py):** 133 automated tests covering all 14 core validation topics.
 - 🧪 **[Database Unit Tests (`tests/test_database.py`)](tests/test_database.py):** SQLite schema, constraints, and ACID transactions.
 - 🧪 **[Service Unit Tests (`tests/test_parking_service.py`)](tests/test_parking_service.py):** Business rules, validations, and fee logic.
 - 🧪 **[GUI Automated Workflow Tests (`tests/test_gui.py`)](tests/test_gui.py):** End-to-end interface navigation and workflows.

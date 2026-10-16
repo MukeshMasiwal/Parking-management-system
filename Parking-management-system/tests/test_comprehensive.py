@@ -1129,6 +1129,12 @@ class TestHistoricalRecordPreservation(_TempDBMixin):
 class TestDatabaseErrorHandling(_TempDBMixin):
     """Verify that database-layer errors are correctly raised or propagated."""
 
+    def test_unusable_database_path_surfaces_operational_error(self):
+        """An invalid database location must fail explicitly, not create fallback data."""
+        missing_parent = os.path.join(self.db, "missing-parent")
+        with self.assertRaises(sqlite3.OperationalError):
+            database.get_connection(os.path.join(missing_parent, "parking.db"))
+
     def test_start_session_with_invalid_slot_id_raises(self):
         with self.assertRaises(database.SlotNotFoundError):
             database.start_parking_session("ERR001", slot_id=999999,
