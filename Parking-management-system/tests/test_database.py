@@ -405,6 +405,17 @@ class TestDatabaseLayer(unittest.TestCase):
         self.assertIn("night_surcharge", all_settings)
         self.assertEqual(all_settings["hourly_rate"], "25.0")
 
+    def test_application_settings_negative_rate_rejected(self):
+        """Verify that negative rate or capacity values raise ValueError."""
+        with self.assertRaises(ValueError):
+            set_setting("hourly_rate", "-10.0", db_path=self.db_path)
+        with self.assertRaises(ValueError):
+            set_setting("rate_car", "-20.0", db_path=self.db_path)
+        with self.assertRaises(ValueError):
+            set_setting("grace_period_mins", "-5", db_path=self.db_path)
+        with self.assertRaises(ValueError):
+            set_setting("hourly_rate", "non-numeric", db_path=self.db_path)
+
     # ------------------------------------------------------------------------
     # 6. TQM Defect Logging
     # ------------------------------------------------------------------------
