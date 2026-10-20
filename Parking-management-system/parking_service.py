@@ -139,6 +139,33 @@ def validate_and_normalize_registration_number(registration_number: str) -> str:
     return cleaned
 
 
+def validate_contact_number(contact: Optional[str]) -> Optional[str]:
+    """
+    Validates optional owner contact number.
+    If provided, must contain 7 to 20 characters and at least 7 digits.
+    Permits digits, spaces, hyphens, parentheses, and leading plus.
+    """
+    if not contact:
+        return None
+    cleaned = str(contact).strip()
+    if not cleaned:
+        return None
+    if len(cleaned) < 7 or len(cleaned) > 20:
+        raise ValidationError(
+            f"Contact number '{cleaned}' length ({len(cleaned)}) is invalid. Must be between 7 and 20 characters."
+        )
+    if not re.match(r"^\+?[0-9\-\s\(\)]+$", cleaned):
+        raise ValidationError(
+            f"Contact number '{cleaned}' contains invalid characters. Only digits, +, -, spaces, and parentheses are allowed."
+        )
+    digits_only = re.sub(r"[^0-9]", "", cleaned)
+    if len(digits_only) < 7:
+        raise ValidationError(
+            f"Contact number '{cleaned}' must contain at least 7 digits."
+        )
+    return cleaned
+
+
 def normalize_vehicle_type(vehicle_type: Optional[str]) -> str:
     """
     Normalizes vehicle type string to standard application classifications.
@@ -330,7 +357,7 @@ def register_vehicle_entry(
     clean_vtype = normalize_vehicle_type(vehicle_type)
     
     clean_owner_name = owner_name.strip() if owner_name and owner_name.strip() else None
-    clean_owner_contact = owner_contact.strip() if owner_contact and owner_contact.strip() else None
+    clean_owner_contact = validate_contact_number(owner_contact)
     
     entry_ts = entry_time if entry_time else datetime.now().strftime(DATETIME_FORMAT)
     validate_timestamp_string(entry_ts, "Entry time")
@@ -630,7 +657,7 @@ def update_permitted_vehicle_info(
         
     norm_vtype = normalize_vehicle_type(vehicle_type) if vehicle_type else None
     clean_owner = owner_name.strip() if owner_name is not None else None
-    clean_contact = owner_contact.strip() if owner_contact is not None else None
+    clean_contact = validate_contact_number(owner_contact) if owner_contact is not None else None
     
     database.update_session_details(
         session_id=session_id,
