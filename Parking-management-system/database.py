@@ -988,6 +988,16 @@ def get_setting(key: str, default: Optional[str] = None, db_path: Optional[str] 
 
 def set_setting(key: str, value: str, description: Optional[str] = None, db_path: Optional[str] = None) -> None:
     """Sets or updates a configuration setting value."""
+    if key in ("hourly_rate", "rate_two_wheeler", "rate_car", "rate_heavy", "grace_period_mins", "total_capacity"):
+        try:
+            num_val = float(value)
+            if num_val < 0:
+                raise ValueError(f"Configuration setting '{key}' cannot be negative ({value}).")
+        except (ValueError, TypeError) as e:
+            if "cannot be negative" in str(e):
+                raise
+            raise ValueError(f"Configuration setting '{key}' requires a valid non-negative number, got '{value}'.")
+
     conn = get_connection(db_path)
     try:
         with conn:
