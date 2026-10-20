@@ -1108,6 +1108,14 @@ class ParkingRecordsView(ctk.CTkFrame):
         )
         self.delete_btn.pack(side="left")
 
+        self.count_lbl = ctk.CTkLabel(
+            action_bar,
+            text="Showing 0 record(s)",
+            font=ctk.CTkFont(size=12),
+            text_color="#95a5a6",
+        )
+        self.count_lbl.pack(side="right", padx=10)
+
     def _on_reset_filters(self):
         self.search_entry.delete(0, "end")
         self.status_var.set("All")
@@ -1130,6 +1138,9 @@ class ParkingRecordsView(ctk.CTkFrame):
                 limit=200,
                 db_path=self.db_path,
             )
+
+            count = len(records) if records else 0
+            self.count_lbl.configure(text=f"Showing {count} record(s)")
 
             if records:
                 self.empty_lbl.place_forget()
