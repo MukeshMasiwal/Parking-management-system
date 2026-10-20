@@ -494,6 +494,51 @@ class TestParkingService(unittest.TestCase):
                 db_path=self.db_path,
             )
 
+    def test_calculate_duration_and_fee_discount_rules(self):
+        """Verifies discount calculation, ceiling enforcement, and negative discount rejection."""
+        # 1. Normal discount application on a 2-hour Car stay ($40 base)
+        res = parking_service.calculate_duration_and_fee(
+            entry_time_str="2026-10-10 10:00:00",
+            exit_time_str="2026-10-10 12:00:00",
+            vehicle_type="Car",
+            discount_amount=10.0,
+            db_path=self.db_path,
+        )
+        self.assertEqual(res["base_fee"], 40.0)
+        self.assertEqual(res["discount_applied"], 10.0)
+        self.assertEqual(res["final_fee"], 30.0)
+        self.assertEqual(res["fee"], 30.0)
+
+        # 2. Discount exceeding base fee raises ValidationError
+        with self.assertRaises(parking_service.ValidationError):
+            parking_service.calculate_duration_and_fee(
+                entry_time_str="2026-10-10 10:00:00",
+                exit_time_str="2026-10-10 12:00:00",
+                vehicle_type="Car",
+                discount_amount=45.0,
+                db_path=self.db_path,
+            )
+
+        # 3. Negative discount raises ValidationError
+        with self.assertRaises(parking_service.ValidationError):
+            parking_service.calculate_duration_and_fee(
+                entry_time_str="2026-10-10 10:00:00",
+                exit_time_str="2026-10-10 12:00:00",
+                vehicle_type="Car",
+                discount_amount=-5.0,
+                db_path=self.db_path,
+            )
+
+        # 4. Non-numeric discount raises ValidationError
+        with self.assertRaises(parking_service.ValidationError):
+            parking_service.calculate_duration_and_fee(
+                entry_time_str="2026-10-10 10:00:00",
+                exit_time_str="2026-10-10 12:00:00",
+                vehicle_type="Car",
+                discount_amount="invalid_discount",  # type: ignore
+                db_path=self.db_path,
+            )
+
 
 if __name__ == "__main__":
     unittest.main()
