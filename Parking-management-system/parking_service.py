@@ -219,6 +219,7 @@ def calculate_duration_and_fee(
     entry_time_str: str,
     exit_time_str: str,
     vehicle_type: str = "Car",
+    discount_amount: float = 0.0,
     db_path: Optional[str] = None
 ) -> Dict[str, Any]:
     """
@@ -232,9 +233,15 @@ def calculate_duration_and_fee(
         - Two-Wheeler: $10.00/hr
         - Car / Compact / EV: $20.00/hr
         - Heavy: $40.00/hr
+    - Validates optional discount_amount (non-negative and cannot exceed calculated fee).
         
     :return: Dictionary containing elapsed minutes, billable hours, hourly rate, and fee.
     """
+    if not isinstance(discount_amount, (int, float)) or isinstance(discount_amount, bool):
+        raise ValidationError("Discount amount must be a non-negative number.")
+    if discount_amount < 0:
+        raise ValidationError("Discount amount cannot be negative.")
+
     entry_dt = validate_timestamp_string(entry_time_str, "Entry time")
     exit_dt = validate_timestamp_string(exit_time_str, "Exit time")
     
@@ -268,12 +275,18 @@ def calculate_duration_and_fee(
     
     if elapsed_minutes <= grace_period:
         billable_hours = 0
-        fee = 0.0
+        base_fee = 0.0
     else:
         # Minimum 1 hour charge, rounded up to next full hour
         billable_hours = max(1, math.ceil(elapsed_minutes / 60.0))
-        fee = round(billable_hours * hourly_rate, 2)
+        base_fee = round(billable_hours * hourly_rate, 2)
         
+    if discount_amount > base_fee:
+        raise ValidationError(
+            f"Discount amount ({discount_amount:.2f}) cannot exceed the calculated fee ({base_fee:.2f})."
+        )
+    final_fee = max(0.0, round(base_fee - discount_amount, 2))
+
     hours_int = int(elapsed_minutes // 60)
     mins_int = int(elapsed_minutes % 60)
     duration_str = f"{hours_int}h {mins_int:02d}m"
@@ -284,7 +297,10 @@ def calculate_duration_and_fee(
         "billable_hours": billable_hours,
         "hourly_rate": hourly_rate,
         "grace_period_mins": grace_period,
-        "fee": fee
+        "base_fee": base_fee,
+        "discount_applied": discount_amount,
+        "final_fee": final_fee,
+        "fee": final_fee,
     }
 
 
@@ -492,15 +508,12 @@ def record_vehicle_exit(
         entry_time_str=session["entry_time"],
         exit_time_str=exit_ts,
         vehicle_type=session["vehicle_type"],
+        discount_amount=discount_amount,
         db_path=db_path
     )
     
-    base_fee = fee_calc["fee"]
-    if discount_amount > base_fee:
-        raise ValidationError(
-            f"Discount amount ({discount_amount:.2f}) cannot exceed the calculated fee ({base_fee:.2f})."
-        )
-    final_fee = max(0.0, round(base_fee - discount_amount, 2))
+    base_fee = fee_calc["base_fee"]
+    final_fee = fee_calc["final_fee"]
     
     # 3. Perform atomic exit and slot release in database
     try:
