@@ -469,6 +469,31 @@ class TestParkingService(unittest.TestCase):
         slot = database.get_slot_by_id(first["slot_id"], self.db_path)
         self.assertEqual(slot["status"], "Occupied")
 
+    def test_owner_contact_validation(self):
+        """Verifies contact number sanitization and rejection of invalid formats."""
+        # 1. Valid contacts
+        self.assertEqual(parking_service.validate_contact_number(None), None)
+        self.assertEqual(parking_service.validate_contact_number(""), None)
+        self.assertEqual(parking_service.validate_contact_number("   "), None)
+        self.assertEqual(parking_service.validate_contact_number("+1-800-555-0199"), "+1-800-555-0199")
+        self.assertEqual(parking_service.validate_contact_number("(022) 2456-7890"), "(022) 2456-7890")
+
+        # 2. Invalid contacts raise ValidationError
+        with self.assertRaises(parking_service.ValidationError):
+            parking_service.validate_contact_number("12345")  # Too short (< 7 chars)
+        with self.assertRaises(parking_service.ValidationError):
+            parking_service.validate_contact_number("call-me-now@mail")  # Illegal chars
+        with self.assertRaises(parking_service.ValidationError):
+            parking_service.validate_contact_number("+12-34-56")  # Only 6 digits (< 7 digits)
+
+        # 3. Rejection during vehicle registration
+        with self.assertRaises(parking_service.ValidationError):
+            parking_service.register_vehicle_entry(
+                "KA01VALID1",
+                owner_contact="bad-contact",
+                db_path=self.db_path,
+            )
+
 
 if __name__ == "__main__":
     unittest.main()
