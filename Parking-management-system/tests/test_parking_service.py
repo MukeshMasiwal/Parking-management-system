@@ -161,6 +161,11 @@ class TestParkingService(unittest.TestCase):
             keyword="sam", db_path=self.db_path
         )
         self.assertEqual([row["id"] for row in found], [entry["session_id"]])
+        by_slot = parking_service.search_parking_records(
+            slot_number=entry["slot_number"],
+            db_path=self.db_path,
+        )
+        self.assertEqual([row["id"] for row in by_slot], [entry["session_id"]])
 
         updated = parking_service.update_permitted_vehicle_info(
             entry["session_id"],
