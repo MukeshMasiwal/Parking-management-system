@@ -63,6 +63,13 @@ class TestParkingService(unittest.TestCase):
                 db_path=self.db_path,
             )
 
+    def test_registration_numbers_are_case_normalized(self):
+        result = parking_service.register_vehicle_entry(
+            "  ab12-cd  ",
+            db_path=self.db_path,
+        )
+        self.assertEqual(result["vehicle_registration_number"], "AB12-CD")
+
     def test_duplicate_active_entry_is_rejected(self):
         first = parking_service.register_vehicle_entry("DL01XY9999", db_path=self.db_path)
 
