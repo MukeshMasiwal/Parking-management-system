@@ -382,6 +382,7 @@ python -m pytest tests/test_database.py tests/test_parking_service.py tests/test
 | `DuplicateActiveSessionError` | Vehicle is currently recorded as parked inside | Process the vehicle's departure via **Vehicle Exit** before re-registering. |
 | `ParkingCapacityFullError` | All 50 slots are currently occupied or under maintenance | Process exits for departed vehicles to free slots before admitting new entries. |
 | `UnsafeDeletionError: Financial audit history must be preserved` | Attempted deletion of a paid completed session without audit reason | In the deletion dialog, enter an official justification (e.g., `Audited test correction`). |
+| `TclError: couldn't read ... ttk/progress.tcl` | Python was installed without the complete Tk runtime | Repair or reinstall Python with Tcl/Tk support, then rerun `python -m pytest tests/test_gui.py -q`. |
 
 ---
 
