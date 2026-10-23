@@ -173,6 +173,8 @@ def normalize_vehicle_type(vehicle_type: Optional[str]) -> str:
     """
     if not vehicle_type:
         return "Car"
+    if not isinstance(vehicle_type, str):
+        raise ValidationError("Vehicle type must be a text value.")
         
     v = vehicle_type.strip().lower()
     if "two" in v or "bike" in v or "motorcycle" in v or "scooter" in v:
@@ -237,7 +239,11 @@ def calculate_duration_and_fee(
         
     :return: Dictionary containing elapsed minutes, billable hours, hourly rate, and fee.
     """
-    if not isinstance(discount_amount, (int, float)) or isinstance(discount_amount, bool):
+    if (
+        not isinstance(discount_amount, (int, float))
+        or isinstance(discount_amount, bool)
+        or not math.isfinite(discount_amount)
+    ):
         raise ValidationError("Discount amount must be a non-negative number.")
     if discount_amount < 0:
         raise ValidationError("Discount amount cannot be negative.")
@@ -372,6 +378,8 @@ def register_vehicle_entry(
     clean_vno = validate_and_normalize_registration_number(vehicle_registration_number)
     clean_vtype = normalize_vehicle_type(vehicle_type)
     
+    if owner_name is not None and not isinstance(owner_name, str):
+        raise ValidationError("Owner name must be a text value.")
     clean_owner_name = owner_name.strip() if owner_name and owner_name.strip() else None
     clean_owner_contact = validate_contact_number(owner_contact)
     
@@ -397,7 +405,9 @@ def register_vehicle_entry(
                 f"Slot '{target_slot['slot_number']}' is currently '{target_slot['status']}', not Available."
             )
     elif slot_number is not None:
-        target_slot = database.get_slot_by_number(slot_number, db_path=db_path)
+        if not isinstance(slot_number, str) or not slot_number.strip():
+            raise ValidationError("Slot number must be a non-empty string.")
+        target_slot = database.get_slot_by_number(slot_number.strip(), db_path=db_path)
         if not target_slot:
             raise SlotNotFoundError(f"Slot number '{slot_number}' does not exist.")
         if target_slot["status"] != "Available":
