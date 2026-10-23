@@ -1251,6 +1251,17 @@ class TestDatabaseErrorHandling(_TempDBMixin):
         )
         self.assertEqual(history[0]["status"], "COMPLETED")
 
+    def test_session_history_limit_is_respected(self):
+        for index in range(3):
+            entry = self._park(
+                f"HISTORY-{index:02d}",
+                entry_time=f"2026-01-0{index + 1} 08:00:00",
+            )
+            database.cancel_parking_session(entry["session_id"], db_path=self.db)
+
+        history = database.get_session_history(db_path=self.db, limit=2)
+        self.assertEqual(len(history), 2)
+
 
 # ===========================================================================
 # Entry point
