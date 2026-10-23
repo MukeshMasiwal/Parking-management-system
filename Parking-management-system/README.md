@@ -330,7 +330,7 @@ python -m pytest -q
 ```
 
 ### Test Suite Breakdown
-1. **[`tests/test_comprehensive.py`](tests/test_comprehensive.py) (132 tests):**
+1. **[`tests/test_comprehensive.py`](tests/test_comprehensive.py):**
    - Covers 14 core operational topics:
      1. Database initialization and idempotency
      2. Valid vehicle registration and normalization
@@ -346,32 +346,28 @@ python -m pytest -q
      12. Atomic slot release transitions
      13. Historical session preservation
      14. Database error handling and transaction rollbacks
-2. **[`tests/test_database.py`](tests/test_database.py) (20 tests):**
+2. **[`tests/test_database.py`](tests/test_database.py):**
    - SQLite schema creation, foreign key enforcement, default 50 slot seeding.
    - Partial unique indexes (`idx_unique_active_vehicle`, `idx_unique_active_slot`).
    - TQM defect logging and severity constraint validation.
-3. **[`tests/test_parking_service.py`](tests/test_parking_service.py) (15 tests):**
+3. **[`tests/test_parking_service.py`](tests/test_parking_service.py):**
    - Plate validation (length 3-16 chars, allowed character set).
    - Capacity exhaustion handling (`ParkingCapacityFullError`).
    - Fee engine policies (15-min free grace period, 1-hr minimum, ceil rounding).
    - Dynamic rate configuration via application settings table.
    - Safe deletion rules (active session rejection, audit reason requirement).
-4. **[`tests/test_gui.py`](tests/test_gui.py) (7 tests):**
+4. **[`tests/test_gui.py`](tests/test_gui.py):**
    - Screen instantiation and navigation across all 7 views.
    - Real-time KPI synchronization with backend SQLite data.
    - End-to-end vehicle entry, search, exit, receipt, and slot release workflows.
    - Help/FAQ live keyword search filtering.
    - About console developer information customization dialog.
 
-### Expected Test Output
-```text
+### Environment note
 The GUI test requires a working Tk installation. On headless systems or Python installations with missing Tk support, run the non-GUI suites separately:
 
 ```powershell
 python -m pytest tests/test_database.py tests/test_parking_service.py tests/test_comprehensive.py -q
-```
-
-OK
 ```
 
 ---
@@ -380,7 +376,7 @@ OK
 
 | Issue / Error | Likely Cause | Verified Solution |
 | :--- | :--- | :--- |
-| `ModuleNotFoundError: No module named 'customtkinter'` | Dependency not installed in current environment | Run `pip install -r requirements.txt` within the active environment. |
+| `ModuleNotFoundError: No module named 'customtkinter'` | Dependency not installed in current environment | Run `python -m pip install -r requirements.txt` within the active environment. |
 | `sqlite3.OperationalError: database is locked` | Another process holds an exclusive lock on `parking_system.db` | Close any external SQLite viewer utilities (e.g. DB Browser for SQLite) and restart. |
 | `ValidationError: Vehicle registration number must contain at least 3 alphanumeric characters` | Input has fewer than 3 valid alphanumeric characters | Enter a valid alphanumeric registration number (e.g., `MH12-AB-1234`). |
 | `DuplicateActiveSessionError` | Vehicle is currently recorded as parked inside | Process the vehicle's departure via **Vehicle Exit** before re-registering. |
@@ -396,7 +392,7 @@ OK
 - 🗄️ **[Database Access Layer (`database.py`)](database.py):** SQLite schema definitions, queries, and transaction management.
 - 🖥️ **[GUI Presentation Module (`app/gui.py`)](app/gui.py):** CustomTkinter view components, layouts, and navigation controller.
 - 🚀 **[Application Entry Point (`main.py`)](main.py):** Main application startup script.
-- 🧪 **[Comprehensive Automated Test Suite (`tests/test_comprehensive.py`)](tests/test_comprehensive.py):** 133 automated tests covering all 14 core validation topics.
+- 🧪 **[Comprehensive Automated Test Suite (`tests/test_comprehensive.py`)](tests/test_comprehensive.py):** Automated tests covering all 14 core validation topics.
 - 🧪 **[Database Unit Tests (`tests/test_database.py`)](tests/test_database.py):** SQLite schema, constraints, and ACID transactions.
 - 🧪 **[Service Unit Tests (`tests/test_parking_service.py`)](tests/test_parking_service.py):** Business rules, validations, and fee logic.
 - 🧪 **[GUI Automated Workflow Tests (`tests/test_gui.py`)](tests/test_gui.py):** End-to-end interface navigation and workflows.
