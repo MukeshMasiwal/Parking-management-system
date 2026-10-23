@@ -171,6 +171,15 @@ class TestParkingService(unittest.TestCase):
         self.assertEqual(updated["vehicle_type"], "EV")
         self.assertEqual(updated["owner_contact"], "555-0100")
 
+        with self.assertRaises(parking_service.ValidationError):
+            parking_service.update_permitted_vehicle_info(
+                entry["session_id"],
+                owner_name=123,
+                db_path=self.db_path,
+            )
+        unchanged = database.get_session_by_id(entry["session_id"], self.db_path)
+        self.assertEqual(unchanged["owner_name"], "Sam")
+
         with self.assertRaises(parking_service.UnsafeDeletionError):
             parking_service.delete_parking_record_safely(
                 entry["session_id"], db_path=self.db_path
