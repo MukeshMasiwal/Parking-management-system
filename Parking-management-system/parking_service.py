@@ -679,6 +679,8 @@ def update_permitted_vehicle_info(
         raise SessionNotFoundError(f"Parking session ID {session_id} not found.")
         
     norm_vtype = normalize_vehicle_type(vehicle_type) if vehicle_type else None
+    if owner_name is not None and not isinstance(owner_name, str):
+        raise ValidationError("Owner name must be a text value.")
     clean_owner = owner_name.strip() if owner_name is not None else None
     clean_contact = validate_contact_number(owner_contact) if owner_contact is not None else None
     
