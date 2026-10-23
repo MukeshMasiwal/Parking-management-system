@@ -128,6 +128,20 @@ class TestParkingService(unittest.TestCase):
         self.assertEqual(result["billable_hours"], 1)
         self.assertEqual(result["final_fee"], 20.0)
 
+    def test_exit_by_vehicle_number_normalizes_plate(self):
+        entry = parking_service.register_vehicle_entry(
+            "EXIT-NORM-01",
+            entry_time="2026-10-11 10:00:00",
+            db_path=self.db_path,
+        )
+        receipt = parking_service.record_vehicle_exit(
+            vehicle_registration_number=" exit-norm-01 ",
+            exit_time="2026-10-11 10:15:00",
+            db_path=self.db_path,
+        )
+        self.assertEqual(receipt["session_id"], entry["session_id"])
+        self.assertEqual(receipt["status"], "COMPLETED")
+
     def test_failed_exit_keeps_slot_occupied(self):
         entry = parking_service.register_vehicle_entry(
             "UP16CC3333",
