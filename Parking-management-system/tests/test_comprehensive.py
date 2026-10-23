@@ -1272,6 +1272,15 @@ class TestDatabaseErrorHandling(_TempDBMixin):
         )
         self.assertEqual([row["id"] for row in results], [active["session_id"]])
 
+    def test_search_all_statuses_returns_cancelled_sessions(self):
+        entry = self._park("STATUS-ALL-01")
+        database.cancel_parking_session(entry["session_id"], db_path=self.db)
+        results = parking_service.search_parking_records(
+            status="ALL",
+            db_path=self.db,
+        )
+        self.assertEqual(results[0]["status"], "CANCELLED")
+
 
 # ===========================================================================
 # Entry point
