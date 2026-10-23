@@ -55,6 +55,14 @@ class TestParkingService(unittest.TestCase):
                 db_path=self.db_path,
             )
 
+    def test_unknown_vehicle_type_is_rejected(self):
+        with self.assertRaises(parking_service.ValidationError):
+            parking_service.register_vehicle_entry(
+                "TYPE-UNK-01",
+                vehicle_type="Spaceship",
+                db_path=self.db_path,
+            )
+
     def test_duplicate_active_entry_is_rejected(self):
         first = parking_service.register_vehicle_entry("DL01XY9999", db_path=self.db_path)
 
