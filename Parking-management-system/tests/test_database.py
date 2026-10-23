@@ -474,6 +474,29 @@ class TestDatabaseLayer(unittest.TestCase):
         self.assertEqual(res["status"], "COMPLETED")
         self.assertEqual(res["fee"], 30.0)
 
+    def test_search_sessions_filters_by_slot_number(self):
+        """Slot filters must return only sessions assigned to that bay."""
+        first = get_available_slots(self.db_path)[0]
+        second = get_available_slots(self.db_path)[1]
+        first_id = start_parking_session(
+            "SLOT-FILTER-01",
+            first["id"],
+            entry_time="2026-10-11 08:00:00",
+            db_path=self.db_path,
+        )
+        start_parking_session(
+            "SLOT-FILTER-02",
+            second["id"],
+            entry_time="2026-10-11 08:00:00",
+            db_path=self.db_path,
+        )
+
+        results = database.search_sessions(
+            slot_number=first["slot_number"],
+            db_path=self.db_path,
+        )
+        self.assertEqual([row["id"] for row in results], [first_id])
+
 
 if __name__ == "__main__":
     unittest.main()
