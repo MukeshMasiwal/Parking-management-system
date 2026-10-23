@@ -142,6 +142,21 @@ class TestParkingService(unittest.TestCase):
         self.assertEqual(receipt["session_id"], entry["session_id"])
         self.assertEqual(receipt["status"], "COMPLETED")
 
+    def test_cancel_active_session_frees_slot(self):
+        entry = parking_service.register_vehicle_entry(
+            "CANCEL-SVC-01",
+            db_path=self.db_path,
+        )
+        parking_service.cancel_active_session_safely(
+            entry["session_id"],
+            cancellation_reason="Test correction",
+            db_path=self.db_path,
+        )
+        self.assertEqual(
+            database.get_slot_by_id(entry["slot_id"], self.db_path)["status"],
+            "Available",
+        )
+
     def test_failed_exit_keeps_slot_occupied(self):
         entry = parking_service.register_vehicle_entry(
             "UP16CC3333",
