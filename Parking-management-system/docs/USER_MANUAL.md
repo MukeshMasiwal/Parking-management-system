@@ -103,6 +103,9 @@ The database file is stored at `parking_system.db` in the project root. Close th
 application before copying this file for a backup so that SQLite transactions are
 fully flushed.
 
+The application does not require a separate database server or credentials;
+SQLite opens this local file automatically.
+
 ---
 
 ## 5. Interface Architecture and Navigation
