@@ -1281,6 +1281,17 @@ class TestDatabaseErrorHandling(_TempDBMixin):
         )
         self.assertEqual(results[0]["status"], "CANCELLED")
 
+    def test_dashboard_metrics_reflect_completed_session(self):
+        entry = self._park("DASH-REVENUE-01")
+        parking_service.record_vehicle_exit(
+            session_id=entry["session_id"],
+            exit_time="2026-01-01 10:00:00",
+            db_path=self.db,
+        )
+        metrics = parking_service.get_dashboard_metrics(db_path=self.db)
+        self.assertEqual(metrics["completed_sessions"], 1)
+        self.assertGreater(metrics["recorded_revenue"], 0)
+
 
 # ===========================================================================
 # Entry point
