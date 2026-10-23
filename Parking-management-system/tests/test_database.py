@@ -444,6 +444,13 @@ class TestDatabaseLayer(unittest.TestCase):
         self.assertEqual(metrics["completed_sessions"], 1)
         self.assertEqual(metrics["recorded_revenue"], 37.5)
 
+    def test_cancel_session_releases_slot(self):
+        slot = get_available_slots(self.db_path)[0]
+        session_id = start_parking_session("CANCEL-01", slot["id"], db_path=self.db_path)
+        cancel_parking_session(session_id, db_path=self.db_path)
+        self.assertEqual(get_slot_by_id(slot["id"], self.db_path)["status"], "Available")
+        self.assertEqual(get_session_by_id(session_id, self.db_path)["status"], "CANCELLED")
+
     def test_application_settings_negative_rate_rejected(self):
         """Verify that negative rate or capacity values raise ValueError."""
         with self.assertRaises(ValueError):
