@@ -240,6 +240,12 @@ class TestParkingService(unittest.TestCase):
                 slot_number="INVALID-SLOT",
                 db_path=self.db_path,
             )
+        with self.assertRaises(parking_service.ValidationError):
+            parking_service.register_vehicle_entry(
+                "MH01DD4004",
+                slot_number="   ",
+                db_path=self.db_path,
+            )
 
     def test_reentry_after_completed_exit(self):
         # Entry 1
