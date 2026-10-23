@@ -3,7 +3,7 @@
 [![Python Version](https://img.shields.io/badge/Python-3.8%2B-blue.svg)](https://www.python.org/)
 [![GUI Framework](https://img.shields.io/badge/GUI-CustomTkinter%205.2.2-informational.svg)](https://customtkinter.tomschimansky.com/)
 [![Database](https://img.shields.io/badge/Database-SQLite3-lightgrey.svg)](https://www.sqlite.org/)
-[![Tests](https://img.shields.io/badge/Tests-175%20Passed-brightgreen.svg)](tests/)
+[![Tests](https://img.shields.io/badge/Tests-pytest-brightgreen.svg)](tests/)
 [![Quality Goal](https://img.shields.io/badge/Quality%20Goal-Q10%20Improve%20Documentation-orange.svg)](docs/USER_MANUAL.md)
 
 An enterprise desktop application engineered for parking facility operations, featuring automated slot allocation, audit-compliant fee calculations, real-time occupancy monitoring, historical session preservation, and Total Quality Management (TQM) defect logging.
@@ -63,7 +63,7 @@ The **Parking Management System** is developed as part of the **Total Quality Ma
 | **GUI Framework** | CustomTkinter 5.2.2 & Tkinter ttk | Modern, responsive dark/light desktop user interface |
 | **Database** | SQLite3 | Persistent embedded relational database with ACID transactions |
 | **Service Layer** | Pure Python ([`parking_service.py`](parking_service.py)) | Business logic validation, fee calculation engine, and capacity tracking |
-| **Test Automation** | Python `unittest` | Complete unit and integration test coverage across database, service, and GUI (175 tests) |
+| **Test Automation** | `pytest` | Unit and integration coverage across database, service, and GUI |
 
 ---
 
@@ -322,11 +322,11 @@ To capture screenshots from your active running instance:
 
 ## 9. Testing Instructions
 
-The repository includes a comprehensive automated test suite consisting of **175 executable tests** across 4 suites in [`tests/`](tests/).
+The repository includes automated tests across the database, service, GUI, and comprehensive behavior suites in [`tests/`](tests/).
 
 ### Run Full Test Suite
 ```bash
-python -m unittest discover tests -v
+python -m pytest -q
 ```
 
 ### Test Suite Breakdown
@@ -365,7 +365,11 @@ python -m unittest discover tests -v
 
 ### Expected Test Output
 ```text
-Ran 175 tests in ~54s
+The GUI test requires a working Tk installation. On headless systems or Python installations with missing Tk support, run the non-GUI suites separately:
+
+```powershell
+python -m pytest tests/test_database.py tests/test_parking_service.py tests/test_comprehensive.py -q
+```
 
 OK
 ```
