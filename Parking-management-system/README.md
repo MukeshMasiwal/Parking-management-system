@@ -86,6 +86,9 @@ Before installing, ensure your environment meets these specifications:
 cd c:\Users\mukes\Desktop\TQM\Parking-management-system
 ```
 
+In VS Code, open this same folder rather than the parent `TQM` folder so that
+the terminal, imports, database file, and test discovery all use the project root.
+
 ### 2. Set Up a Virtual Environment (Recommended)
 ```bash
 # Windows PowerShell
