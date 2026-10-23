@@ -409,6 +409,10 @@ class TestDatabaseLayer(unittest.TestCase):
         self.assertIn("night_surcharge", all_settings)
         self.assertEqual(all_settings["hourly_rate"], "25.0")
 
+    def test_missing_setting_returns_none(self):
+        """Unknown configuration keys should be distinguishable from empty values."""
+        self.assertIsNone(get_setting("missing_setting", db_path=self.db_path))
+
     def test_application_settings_negative_rate_rejected(self):
         """Verify that negative rate or capacity values raise ValueError."""
         with self.assertRaises(ValueError):
