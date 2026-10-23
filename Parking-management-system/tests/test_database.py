@@ -423,6 +423,14 @@ class TestDatabaseLayer(unittest.TestCase):
         self.assertEqual(metrics["occupied_slots"], 0)
         self.assertEqual(metrics["available_slots"], 50)
 
+    def test_capacity_metrics_count_active_session(self):
+        slot = get_available_slots(self.db_path)[0]
+        start_parking_session("METRIC-01", slot["id"], db_path=self.db_path)
+        metrics = database.get_capacity_metrics(db_path=self.db_path)
+        self.assertEqual(metrics["occupied_slots"], 1)
+        self.assertEqual(metrics["active_sessions"], 1)
+        self.assertEqual(metrics["available_slots"], 49)
+
     def test_application_settings_negative_rate_rejected(self):
         """Verify that negative rate or capacity values raise ValueError."""
         with self.assertRaises(ValueError):
