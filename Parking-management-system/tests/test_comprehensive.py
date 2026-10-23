@@ -1301,6 +1301,26 @@ class TestDatabaseErrorHandling(_TempDBMixin):
         self.assertEqual(len(history), 1)
         self.assertEqual(history[0]["vehicle_registration_number"], "HISTORY-CASE-01")
 
+    def test_vehicle_history_limit_is_respected(self):
+        for index in range(3):
+            self._park(
+                "HISTORY-LIMIT",
+                entry_time=f"2026-02-0{index + 1} 08:00:00",
+            )
+            database.cancel_parking_session(
+                database.get_active_session_by_vehicle(
+                    "HISTORY-LIMIT",
+                    db_path=self.db,
+                )["id"],
+                db_path=self.db,
+            )
+        history = parking_service.get_vehicle_history(
+            "HISTORY-LIMIT",
+            limit=2,
+            db_path=self.db,
+        )
+        self.assertEqual(len(history), 2)
+
 
 # ===========================================================================
 # Entry point
