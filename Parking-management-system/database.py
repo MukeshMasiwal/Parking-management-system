@@ -833,13 +833,14 @@ def search_sessions(
     keyword: Optional[str] = None,
     status: Optional[str] = None,
     vehicle_type: Optional[str] = None,
+    slot_number: Optional[str] = None,
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
     limit: int = 100,
     db_path: Optional[str] = None
 ) -> List[sqlite3.Row]:
     """
-    Searches parking sessions with optional keyword, status, vehicle type, and date range filters.
+    Searches parking sessions with optional keyword, status, vehicle type, slot number, and date range filters.
     All filters are parameterized to prevent SQL injection.
     """
     conn = get_connection(db_path)
@@ -862,6 +863,10 @@ def search_sessions(
         if vehicle_type and vehicle_type.strip() and vehicle_type.strip().lower() != "all":
             conditions.append("ps.vehicle_type = ?")
             params.append(vehicle_type.strip())
+
+        if slot_number and slot_number.strip():
+            conditions.append("s.slot_number = ? COLLATE NOCASE")
+            params.append(slot_number.strip())
 
         if start_date:
             conditions.append("ps.entry_time >= ?")
