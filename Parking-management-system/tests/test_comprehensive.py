@@ -1292,6 +1292,15 @@ class TestDatabaseErrorHandling(_TempDBMixin):
         self.assertEqual(metrics["completed_sessions"], 1)
         self.assertGreater(metrics["recorded_revenue"], 0)
 
+    def test_vehicle_history_is_case_insensitive(self):
+        self._park("HISTORY-CASE-01")
+        history = parking_service.get_vehicle_history(
+            " history-case-01 ",
+            db_path=self.db,
+        )
+        self.assertEqual(len(history), 1)
+        self.assertEqual(history[0]["vehicle_registration_number"], "HISTORY-CASE-01")
+
 
 # ===========================================================================
 # Entry point
