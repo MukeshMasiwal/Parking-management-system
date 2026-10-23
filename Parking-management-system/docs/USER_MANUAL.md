@@ -93,6 +93,10 @@ On initial launch, the application automatically:
    - 5 EV Charging slots (`E-01` to `E-05`)
 4. Seeds configurable billing rates and grace period settings into `application_settings`.
 
+The database file is stored at `parking_system.db` in the project root. Close the
+application before copying this file for a backup so that SQLite transactions are
+fully flushed.
+
 ---
 
 ## 5. Interface Architecture and Navigation
