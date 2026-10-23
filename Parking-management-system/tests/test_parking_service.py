@@ -94,6 +94,16 @@ class TestParkingService(unittest.TestCase):
         self.assertEqual(rounded["billable_hours"], 2)
         self.assertEqual(rounded["fee"], 20.0)
 
+    def test_fee_at_grace_period_boundary_remains_free(self):
+        result = parking_service.calculate_duration_and_fee(
+            "2026-10-11 10:00:00",
+            "2026-10-11 10:15:00",
+            db_path=self.db_path,
+        )
+        self.assertEqual(result["duration_minutes"], 15)
+        self.assertEqual(result["billable_hours"], 0)
+        self.assertEqual(result["final_fee"], 0.0)
+
     def test_failed_exit_keeps_slot_occupied(self):
         entry = parking_service.register_vehicle_entry(
             "UP16CC3333",
