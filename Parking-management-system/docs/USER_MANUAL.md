@@ -79,6 +79,9 @@ To launch the graphical desktop interface, execute `main.py`:
 python main.py
 ```
 
+The application runs in the foreground. Close the application window to stop it,
+or press `Ctrl+C` in the terminal after closing the window.
+
 ### Automatic Initialization
 On initial launch, the application automatically:
 1. Detects or creates the SQLite database file (`parking_system.db`).
