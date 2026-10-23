@@ -417,6 +417,12 @@ class TestDatabaseLayer(unittest.TestCase):
         """Unknown configuration keys should be distinguishable from empty values."""
         self.assertIsNone(get_setting("missing_setting", db_path=self.db_path))
 
+    def test_capacity_metrics_start_empty(self):
+        metrics = database.get_capacity_metrics(db_path=self.db_path)
+        self.assertEqual(metrics["total_slots"], 50)
+        self.assertEqual(metrics["occupied_slots"], 0)
+        self.assertEqual(metrics["available_slots"], 50)
+
     def test_application_settings_negative_rate_rejected(self):
         """Verify that negative rate or capacity values raise ValueError."""
         with self.assertRaises(ValueError):
