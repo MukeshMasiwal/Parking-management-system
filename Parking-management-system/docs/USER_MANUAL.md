@@ -70,6 +70,12 @@ The **Parking Management System** is a professional desktop application engineer
    python -m pip install -r requirements.txt
    ```
 
+4. **Verify the selected interpreter:**
+   ```powershell
+   python --version
+   python -c "import customtkinter; print(customtkinter.__version__)"
+   ```
+
 ---
 
 ## 4. Application Startup
