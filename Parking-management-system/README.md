@@ -112,6 +112,12 @@ python main.py
 *Note: On initial startup, the database schema and default 50 slots are automatically generated.*
 This is a desktop application, so it does not expose a localhost URL or require separate frontend and backend terminals.
 
+To run the entry point with the virtual-environment interpreter explicitly:
+
+```powershell
+.\venv\Scripts\python.exe main.py
+```
+
 ---
 
 ## 6. Folder Structure
