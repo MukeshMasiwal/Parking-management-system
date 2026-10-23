@@ -1233,6 +1233,24 @@ class TestDatabaseErrorHandling(_TempDBMixin):
         result = database.get_slot_by_number("ZZ-99", self.db)
         self.assertIsNone(result)
 
+    def test_completed_session_is_removed_from_active_listing(self):
+        entry = self._park("ACTIVE-LIFE-01")
+        self.assertEqual(len(database.get_all_active_sessions(self.db)), 1)
+
+        database.end_parking_session(
+            entry["session_id"],
+            exit_time="2026-01-01 10:00:00",
+            fee=20.0,
+            db_path=self.db,
+        )
+
+        self.assertEqual(database.get_all_active_sessions(self.db), [])
+        history = database.get_session_history(
+            db_path=self.db,
+            vehicle_number="ACTIVE-LIFE-01",
+        )
+        self.assertEqual(history[0]["status"], "COMPLETED")
+
 
 # ===========================================================================
 # Entry point
