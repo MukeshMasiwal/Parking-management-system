@@ -38,7 +38,7 @@ The **Parking Management System** is a professional desktop application engineer
 ## 2. Prerequisites and System Requirements
 
 - **Operating System:** Windows 10/11, macOS 11+, or Linux (Ubuntu 20.04+ with Tkinter support).
-- **Python Version:** Python 3.8 to Python 3.12 (Python 3.10+ recommended).
+- **Python Version:** Python 3.8 or newer (Python 3.10+ recommended).
 - **Display Resolution:** Minimum resolution 1024x768 (Optimal: 1280x800 or higher).
 - **Dependencies:**
   - `customtkinter==5.2.2`
@@ -67,7 +67,7 @@ The **Parking Management System** is a professional desktop application engineer
 
 3. **Install dependencies:**
    ```bash
-   pip install -r requirements.txt
+   python -m pip install -r requirements.txt
    ```
 
 ---
