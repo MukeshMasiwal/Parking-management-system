@@ -168,6 +168,10 @@ class TestDatabaseLayer(unittest.TestCase):
         self.assertEqual(slot["slot_number"], "VIP-01")
         self.assertEqual(slot["status"], "Available")
 
+    def test_blank_slot_lookup_returns_no_result(self):
+        """Blank slot identifiers must not match an existing record."""
+        self.assertIsNone(get_slot_by_number("   ", db_path=self.db_path))
+
     def test_duplicate_slot_number_rejected(self):
         """Verify duplicate slot number raises an error."""
         with self.assertRaises(InvalidOperationError):
