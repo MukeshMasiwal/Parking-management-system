@@ -41,6 +41,20 @@ class TestParkingService(unittest.TestCase):
             "Occupied",
         )
 
+    def test_entry_rejects_non_text_owner_name_and_vehicle_type(self):
+        with self.assertRaises(parking_service.ValidationError):
+            parking_service.register_vehicle_entry(
+                "MH12AB1234",
+                owner_name=123,
+                db_path=self.db_path,
+            )
+        with self.assertRaises(parking_service.ValidationError):
+            parking_service.register_vehicle_entry(
+                "MH12AB1235",
+                vehicle_type=object(),
+                db_path=self.db_path,
+            )
+
     def test_duplicate_active_entry_is_rejected(self):
         first = parking_service.register_vehicle_entry("DL01XY9999", db_path=self.db_path)
 
@@ -271,6 +285,31 @@ class TestParkingService(unittest.TestCase):
         self.assertEqual(receipt["discount_applied"], 10.0)
         self.assertEqual(receipt["final_fee"], 30.0)
         self.assertEqual(receipt["status"], "COMPLETED")
+
+    def test_non_finite_discount_is_rejected(self):
+        entry = parking_service.register_vehicle_entry(
+            "DL04AA4322",
+            entry_time="2026-10-11 10:00:00",
+            db_path=self.db_path,
+        )
+        for invalid_discount in (float("nan"), float("inf"), float("-inf")):
+            with self.subTest(discount=invalid_discount):
+                with self.assertRaises(parking_service.ValidationError):
+                    parking_service.record_vehicle_exit(
+                        session_id=entry["session_id"],
+                        exit_time="2026-10-11 11:30:00",
+                        discount_amount=invalid_discount,
+                        db_path=self.db_path,
+                    )
+
+    def test_explicit_slot_number_ignores_surrounding_whitespace(self):
+        slot = database.get_available_slots(self.db_path)[0]
+        result = parking_service.register_vehicle_entry(
+            "MH12AB1236",
+            slot_number=f"  {slot['slot_number']}  ",
+            db_path=self.db_path,
+        )
+        self.assertEqual(result["slot_number"], slot["slot_number"])
 
     def test_exit_nonexistent_and_completed_session_errors(self):
         # Non-existent session ID
@@ -542,4 +581,3 @@ class TestParkingService(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-
