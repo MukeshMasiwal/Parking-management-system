@@ -1262,6 +1262,16 @@ class TestDatabaseErrorHandling(_TempDBMixin):
         history = database.get_session_history(db_path=self.db, limit=2)
         self.assertEqual(len(history), 2)
 
+    def test_search_status_filter_returns_only_active_sessions(self):
+        active = self._park("STATUS-ACTIVE-01")
+        cancelled = self._park("STATUS-CANCEL-01")
+        database.cancel_parking_session(cancelled["session_id"], db_path=self.db)
+        results = parking_service.search_parking_records(
+            status="ACTIVE",
+            db_path=self.db,
+        )
+        self.assertEqual([row["id"] for row in results], [active["session_id"]])
+
 
 # ===========================================================================
 # Entry point
