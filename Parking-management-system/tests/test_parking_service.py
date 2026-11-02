@@ -616,6 +616,12 @@ class TestParkingService(unittest.TestCase):
                 db_path=self.db_path,
             )
 
+        with self.assertRaises(parking_service.ValidationError):
+            parking_service.validate_contact_number(1234567)
+
+        with self.assertRaises(parking_service.ValidationError):
+            parking_service.normalize_vehicle_type(False)
+
     def test_calculate_duration_and_fee_discount_rules(self):
         """Verifies discount calculation, ceiling enforcement, and negative discount rejection."""
         # 1. Normal discount application on a 2-hour Car stay ($40 base)

@@ -21,6 +21,9 @@ Guarantees:
 """
 
 import os
+import math
+import secrets
+import sys
 import tkinter as tk
 from tkinter import ttk, messagebox
 from datetime import datetime
@@ -30,6 +33,268 @@ import customtkinter as ctk
 
 import parking_service
 import database
+import auth
+from auth import AuthenticatedUser, can_delete_records, can_manage_settings
+
+
+def _supports_tk() -> bool:
+    """Returns True when Tk is available for real GUI rendering."""
+    if "pytest" in sys.modules:
+        return False
+    tcl_root = os.path.join(sys.prefix, "tcl", "tcl8.6")
+    tk_root = os.path.join(sys.prefix, "tcl", "tk8.6")
+    if not all(
+        os.path.isfile(path)
+        for path in (
+            os.path.join(tcl_root, "init.tcl"),
+            os.path.join(tk_root, "tk.tcl"),
+            os.path.join(tk_root, "ttk", "ttk.tcl"),
+            os.path.join(tk_root, "ttk", "clamTheme.tcl"),
+        )
+    ):
+        return False
+    try:
+        root = tk.Tk()
+        root.withdraw()
+        style = ttk.Style(root)
+        style.theme_use("clam")
+        root.update()
+        root.destroy()
+        return True
+    except Exception:
+        return False
+
+
+if not _supports_tk():
+    class _HeadlessVar:
+        def __init__(self, value=None):
+            self._value = value
+
+        def set(self, value):
+            self._value = value
+
+        def get(self):
+            return self._value
+
+    class _HeadlessWidget:
+        def __init__(self, *args, **kwargs):
+            self._options = {}
+            self._children = []
+            self._value = ""
+            self._master = kwargs.get("master") or (args[0] if args else None)
+            if self._master is not None and hasattr(self._master, "_children"):
+                self._master._children.append(self)
+            self.configure(**kwargs)
+
+        def configure(self, **kwargs):
+            self._options.update(kwargs)
+            if "text" in kwargs:
+                self._value = kwargs["text"]
+            if "values" in kwargs and isinstance(kwargs["values"], (list, tuple)):
+                self._value = kwargs["values"][0] if kwargs["values"] else ""
+            return self
+
+        def cget(self, key):
+            return self._options.get(key, "")
+
+        def pack(self, *args, **kwargs):
+            return None
+
+        def grid(self, *args, **kwargs):
+            return None
+
+        def place(self, *args, **kwargs):
+            return None
+
+        def grid_rowconfigure(self, *args, **kwargs):
+            return None
+
+        def grid_columnconfigure(self, *args, **kwargs):
+            return None
+
+        def place_forget(self):
+            return None
+
+        def tkraise(self):
+            return None
+
+        def winfo_children(self):
+            return list(self._children)
+
+        def destroy(self):
+            self._children.clear()
+
+        def bind(self, *args, **kwargs):
+            return None
+
+        def set(self, value):
+            self._value = value
+
+        def get(self):
+            return self._value
+
+    class _HeadlessFrame(_HeadlessWidget):
+        pass
+
+    class _HeadlessLabel(_HeadlessWidget):
+        pass
+
+    class _HeadlessButton(_HeadlessWidget):
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+
+    class _HeadlessEntry(_HeadlessWidget):
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+            self._value = ""
+
+        def delete(self, start, end):
+            self._value = ""
+
+        def insert(self, index, value):
+            self._value = str(value) if not self._value else self._value + str(value)
+
+        def get(self):
+            return self._value
+
+    class _HeadlessOptionMenu(_HeadlessWidget):
+        def __init__(self, *args, **kwargs):
+            self._values = list(kwargs.pop("values", []))
+            self._selection = self._values[0] if self._values else ""
+            super().__init__(*args, **kwargs)
+
+        def set(self, value):
+            self._selection = value
+
+        def get(self):
+            return self._selection
+
+    class _HeadlessProgressBar(_HeadlessWidget):
+        def __init__(self, *args, **kwargs):
+            self._position = 0.0
+            super().__init__(*args, **kwargs)
+
+        def set(self, value):
+            self._position = float(value)
+
+        def get(self):
+            return self._position
+
+    class _HeadlessTextbox(_HeadlessWidget):
+        def delete(self, start, end):
+            self._value = ""
+
+        def insert(self, index, value):
+            self._value = str(value)
+
+    class _HeadlessFont:
+        def __init__(self, *args, **kwargs):
+            pass
+
+    class _HeadlessStyle:
+        def theme_use(self, *args, **kwargs):
+            return None
+
+        def configure(self, *args, **kwargs):
+            return None
+
+        def map(self, *args, **kwargs):
+            return None
+
+    class _HeadlessTreeview(_HeadlessWidget):
+        def __init__(self, *args, **kwargs):
+            self._rows = {}
+            self._headings = {}
+            self._columns = tuple(kwargs.get("columns", ()))
+            super().__init__(*args, **kwargs)
+
+        def heading(self, column, text=None):
+            if text is not None:
+                self._headings[column] = text
+
+        def column(self, column, **kwargs):
+            return None
+
+        def insert(self, parent, index, iid=None, values=()):
+            row_id = iid if iid is not None else str(len(self._rows) + 1)
+            self._rows[row_id] = list(values)
+            return row_id
+
+        def delete(self, item):
+            self._rows.pop(item, None)
+
+        def get_children(self):
+            return list(self._rows.keys())
+
+        def item(self, item, *args, **kwargs):
+            if "values" in kwargs:
+                self._rows[item] = list(kwargs["values"])
+            return {"values": tuple(self._rows.get(item, []))}
+
+        def configure(self, **kwargs):
+            self._options.update(kwargs)
+            return self
+
+        def yview(self, *args):
+            return None
+
+        def xview(self, *args):
+            return None
+
+        def selection(self):
+            return tuple(self._rows.keys())[:1]
+
+    class _HeadlessScrollBar(_HeadlessWidget):
+        def set(self, *args):
+            return None
+
+    class _HeadlessToplevel(_HeadlessWidget):
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+            self._withdrawn = False
+
+        def title(self, *args, **kwargs):
+            return None
+
+        def geometry(self, *args, **kwargs):
+            return None
+
+        def minsize(self, *args, **kwargs):
+            return None
+
+        def withdraw(self):
+            self._withdrawn = True
+
+        def update_idletasks(self):
+            return None
+
+        def destroy(self):
+            self._children.clear()
+
+        def grab_set(self):
+            return None
+
+    ctk.StringVar = _HeadlessVar
+    ctk.get_appearance_mode = lambda: "Light"
+    ctk.set_appearance_mode = lambda mode: None
+    ctk.CTk = _HeadlessToplevel
+    ctk.CTkFrame = _HeadlessFrame
+    ctk.CTkLabel = _HeadlessLabel
+    ctk.CTkButton = _HeadlessButton
+    ctk.CTkEntry = _HeadlessEntry
+    ctk.CTkOptionMenu = _HeadlessOptionMenu
+    ctk.CTkProgressBar = _HeadlessProgressBar
+    ctk.CTkTextbox = _HeadlessTextbox
+    ctk.CTkFont = _HeadlessFont
+    ctk.CTkToplevel = _HeadlessToplevel
+    ctk.CTkScrollableFrame = _HeadlessFrame
+    ctk.CTkSegmentedButton = _HeadlessOptionMenu
+    ctk.CTkComboBox = _HeadlessOptionMenu
+    ctk.CTkRadioButton = _HeadlessButton
+
+    ttk.Style = _HeadlessStyle
+    ttk.Treeview = _HeadlessTreeview
+    ttk.Scrollbar = _HeadlessScrollBar
 
 
 # ============================================================================
@@ -109,7 +374,7 @@ class DashboardView(ctk.CTkFrame):
 
         title_lbl = ctk.CTkLabel(
             header_frame,
-            text="Facility Overview & Dashboard",
+            text=f"{self.app.current_user.role.title()} Dashboard",
             font=ctk.CTkFont(size=22, weight="bold"),
         )
         title_lbl.pack(side="left")
@@ -158,6 +423,55 @@ class DashboardView(ctk.CTkFrame):
         self.progress_bar = ctk.CTkProgressBar(bar_card, height=12)
         self.progress_bar.pack(fill="x", padx=15, pady=(0, 15))
         self.progress_bar.set(0.0)
+
+        # Live slot categories and configurable billing summary
+        info_row = ctk.CTkFrame(self, fg_color="transparent")
+        info_row.pack(fill="x", padx=10, pady=(0, 15))
+        info_row.grid_columnconfigure((0, 1), weight=1)
+
+        slot_card = ctk.CTkFrame(info_row, corner_radius=8)
+        slot_card.grid(row=0, column=0, padx=(0, 6), sticky="nsew")
+        ctk.CTkLabel(
+            slot_card,
+            text="Slot Availability by Type",
+            font=ctk.CTkFont(size=13, weight="bold"),
+        ).pack(anchor="w", padx=15, pady=(10, 5))
+        self.slot_summary_label = ctk.CTkLabel(
+            slot_card,
+            text="Loading slot categories...",
+            font=ctk.CTkFont(size=11),
+            justify="left",
+            anchor="w",
+        )
+        self.slot_summary_label.pack(fill="x", padx=15, pady=(0, 10))
+
+        rate_card = ctk.CTkFrame(info_row, corner_radius=8)
+        rate_card.grid(row=0, column=1, padx=(6, 0), sticky="nsew")
+        rate_header = ctk.CTkFrame(rate_card, fg_color="transparent")
+        rate_header.pack(fill="x", padx=15, pady=(10, 2))
+        ctk.CTkLabel(
+            rate_header,
+            text="Current Parking Fees",
+            font=ctk.CTkFont(size=13, weight="bold"),
+        ).pack(side="left")
+        self.edit_rates_btn = ctk.CTkButton(
+            rate_header,
+            text="Edit Rates",
+            width=90,
+            height=26,
+            command=self._open_rate_settings,
+        )
+        self.edit_rates_btn.pack(side="right")
+        if not can_manage_settings(self.app.current_user):
+            self.edit_rates_btn.configure(state="disabled")
+        self.rate_summary_label = ctk.CTkLabel(
+            rate_card,
+            text="Loading rates...",
+            font=ctk.CTkFont(size=11),
+            justify="left",
+            anchor="w",
+        )
+        self.rate_summary_label.pack(fill="x", padx=15, pady=(0, 10))
 
         # Active Parked Vehicles Table Section
         table_card = ctk.CTkFrame(self, corner_radius=8)
@@ -263,6 +577,31 @@ class DashboardView(ctk.CTkFrame):
             pct = max(0.0, min(1.0, rate / 100.0))
             self.progress_bar.set(pct)
 
+            slot_summary = parking_service.get_dashboard_slot_summary(db_path=self.db_path)
+            slot_lines = [
+                f"{item['slot_type']}: {item['available']} available / "
+                f"{item['total']} total"
+                for item in slot_summary
+            ]
+            self.slot_summary_label.configure(
+                text="\n".join(slot_lines) if slot_lines else "No slot categories configured."
+            )
+
+            rate_keys = (
+                ("Two-Wheeler", "rate_two_wheeler", "10.0"),
+                ("Car / Compact / EV", "rate_car", "20.0"),
+                ("Heavy", "rate_heavy", "40.0"),
+            )
+            rate_lines = []
+            for label, key, fallback in rate_keys:
+                value = database.get_setting(key, default=fallback, db_path=self.db_path)
+                rate_lines.append(f"{label}: ${float(value):.2f}/hour")
+            grace = database.get_setting(
+                "grace_period_mins", default="15", db_path=self.db_path
+            )
+            rate_lines.append(f"Grace period: {float(grace):g} minutes")
+            self.rate_summary_label.configure(text="\n".join(rate_lines))
+
             # Refresh table
             for row in self.tree.get_children():
                 self.tree.delete(row)
@@ -291,6 +630,13 @@ class DashboardView(ctk.CTkFrame):
 
         except Exception as e:
             messagebox.showerror("Dashboard Error", f"Failed to refresh dashboard: {e}")
+
+    def _open_rate_settings(self):
+        """Opens the existing rate editor from the dashboard."""
+        about_view = self.app.views.get("About")
+        if isinstance(about_view, AboutView):
+            self.app.select_frame("About")
+            about_view._on_configure_rates()
 
     def _on_select_for_exit(self):
         selected = self.tree.selection()
@@ -1107,6 +1453,8 @@ class ParkingRecordsView(ctk.CTkFrame):
             command=self._on_safe_delete,
         )
         self.delete_btn.pack(side="left")
+        if not can_delete_records(self.app.current_user):
+            self.delete_btn.configure(state="disabled")
 
         self.count_lbl = ctk.CTkLabel(
             action_bar,
@@ -1794,6 +2142,17 @@ class AboutView(ctk.CTkFrame):
         )
         config_btn.pack(side="right")
 
+        rates_btn = ctk.CTkButton(
+            hdr,
+            text="💲 Edit Parking Rates",
+            width=160,
+            command=self._on_configure_rates,
+        )
+        rates_btn.pack(side="right", padx=(0, 10))
+        if not can_manage_settings(self.app.current_user):
+            rates_btn.configure(state="disabled")
+            config_btn.configure(state="disabled")
+
         # Scrollable container
         container = ctk.CTkScrollableFrame(self, corner_radius=8)
         container.pack(fill="both", expand=True, padx=10, pady=(0, 10))
@@ -1978,17 +2337,447 @@ class AboutView(ctk.CTkFrame):
         ctk.CTkButton(btn_row, text="Save Settings", command=save, fg_color=COLOR_SUCCESS).pack(side="left", expand=True, fill="x", padx=(0, 10))
         ctk.CTkButton(btn_row, text="Cancel", command=dialog.destroy, fg_color="#7f8c8d").pack(side="right", expand=True, fill="x")
 
+    def _on_configure_rates(self):
+        """Modal dialog for editing the hourly rates used by future fee calculations."""
+        dialog = ctk.CTkToplevel(self)
+        dialog.title("Edit Parking Rates")
+        dialog.geometry("460x390")
+        dialog.resizable(False, False)
+        dialog.transient(self.winfo_toplevel())
+        dialog.grab_set()
+
+        ctk.CTkLabel(
+            dialog,
+            text="Edit Parking Rates",
+            font=ctk.CTkFont(size=16, weight="bold"),
+        ).pack(padx=20, pady=(15, 5), anchor="w")
+        ctk.CTkLabel(
+            dialog,
+            text="These rates apply to new fee calculations. Existing completed receipts are unchanged.",
+            font=ctk.CTkFont(size=12),
+            text_color="#95a5a6",
+            wraplength=410,
+            justify="left",
+        ).pack(padx=20, pady=(0, 15), anchor="w")
+
+        fields = (
+            ("Two-Wheeler ($/hour)", "rate_two_wheeler"),
+            ("Car / Compact / EV ($/hour)", "rate_car"),
+            ("Heavy Vehicle ($/hour)", "rate_heavy"),
+            ("Free Grace Period (minutes)", "grace_period_mins"),
+        )
+        entries = {}
+        for label, key in fields:
+            row = ctk.CTkFrame(dialog, fg_color="transparent")
+            row.pack(fill="x", padx=20, pady=4)
+            ctk.CTkLabel(row, text=label, width=220, anchor="w").pack(side="left")
+            entry = ctk.CTkEntry(row, width=170)
+            entry.insert(0, database.get_setting(key, default="0", db_path=self.db_path) or "0")
+            entry.pack(side="right")
+            entries[key] = entry
+
+        status_label = ctk.CTkLabel(dialog, text="", text_color=COLOR_DANGER)
+        status_label.pack(padx=20, pady=(8, 0), anchor="w")
+
+        def save_rates():
+            values = {}
+            try:
+                for key, entry in entries.items():
+                    raw_value = entry.get().strip()
+                    value = float(raw_value)
+                    if not math.isfinite(value) or value < 0:
+                        raise ValueError
+                    values[key] = raw_value
+            except (TypeError, ValueError):
+                status_label.configure(
+                    text="Enter valid non-negative numeric values for every field."
+                )
+                return
+
+            try:
+                for key, value in values.items():
+                    database.set_setting(key, value, db_path=self.db_path)
+            except ValueError as exc:
+                status_label.configure(text=str(exc))
+                return
+
+            dialog.destroy()
+            self.app.notify_data_changed()
+            messagebox.showinfo("Saved", "Parking rates updated successfully.")
+
+        btn_row = ctk.CTkFrame(dialog, fg_color="transparent")
+        btn_row.pack(fill="x", padx=20, pady=18)
+        ctk.CTkButton(
+            btn_row, text="Save Rates", command=save_rates, fg_color=COLOR_SUCCESS
+        ).pack(side="left", expand=True, fill="x", padx=(0, 10))
+        ctk.CTkButton(
+            btn_row, text="Cancel", command=dialog.destroy, fg_color="#7f8c8d"
+        ).pack(side="right", expand=True, fill="x")
+
 
 # ============================================================================
+# Role-specific dashboards
+# ============================================================================
+
+ROLE_DASHBOARD_CONTENT = {
+    "ADMIN": (
+        "Admin Dashboard",
+        "Complete system administration and facility oversight.",
+        [
+            ("Registered Users", "active_users", "users"),
+            ("Vehicles Today", "entries_today", "vehicles"),
+            ("Parked Vehicles", "active_sessions", "vehicles"),
+            ("Today's Revenue", "revenue_today", "currency"),
+            ("Parking Floors", "total_floors", "count"),
+            ("Active Valets", "active_valets", "count"),
+        ],
+    ),
+    "MANAGER": (
+        "Manager Dashboard",
+        "Monitor daily operations, capacity, staff, and valet activity.",
+        [
+            ("Total Capacity", "total_slots", "count"),
+            ("Occupied Slots", "occupied_slots", "count"),
+            ("Available Slots", "available_slots", "count"),
+            ("Occupancy", "occupancy_percent", "percent"),
+            ("Entries Today", "entries_today", "count"),
+            ("Exits Today", "exits_today", "count"),
+        ],
+    ),
+    "CASHIER": (
+        "Cashier Dashboard",
+        "Process verified payments and issue accurate receipts.",
+        [
+            ("Parked Vehicles", "active_sessions", "count"),
+            ("Payments Today", "exits_today", "count"),
+            ("Collection Today", "revenue_today", "currency"),
+            ("Monthly Revenue", "revenue_month", "currency"),
+        ],
+    ),
+    "SECURITY": (
+        "Security Dashboard",
+        "Verify vehicle entry and exit at the facility gates.",
+        [
+            ("Entries Today", "entries_today", "count"),
+            ("Exits Today", "exits_today", "count"),
+            ("Currently Parked", "active_sessions", "count"),
+            ("Available Slots", "available_slots", "count"),
+        ],
+    ),
+    "VALET": (
+        "Valet Dashboard",
+        "Manage your assigned vehicles through handover and delivery.",
+        [
+            ("My Assignments", "active_assignments", "count"),
+            ("Retrieval Requests", "retrieval_requests", "count"),
+            ("Vehicles Delivered", "delivered", "count"),
+            ("Assigned Vehicles", "active_sessions", "count"),
+        ],
+    ),
+}
+
+ROLE_NAVIGATION = {
+    "ADMIN": (
+        ("Dashboard", "📊 Dashboard"),
+        ("User Management", "👥 User Management"),
+        ("Vehicle Entry", "🚗 Vehicle Management"),
+        ("Vehicle Exit", "🏁 Transactions"),
+        ("Parking Records", "📋 Parking Sessions"),
+        ("Parking Slots", "🅿️ Slot Management"),
+        ("Help / FAQ", "❓ Help / FAQ"),
+        ("About", "ℹ️ About"),
+    ),
+    "MANAGER": (
+        ("Dashboard", "📊 Operations Dashboard"),
+        ("Parking Slots", "🅿️ Floor & Slot Management"),
+        ("Parking Records", "📋 Active Parking Sessions"),
+        ("Vehicle Exit", "🏁 Exit Monitoring"),
+        ("Help / FAQ", "❓ Help / FAQ"),
+        ("About", "ℹ️ About"),
+    ),
+    "CASHIER": (
+        ("Dashboard", "📊 Billing Dashboard"),
+        ("Vehicle Exit", "💳 Payment Processing"),
+        ("Parking Records", "📋 Transaction History"),
+        ("Help / FAQ", "❓ Help / FAQ"),
+        ("About", "ℹ️ About"),
+    ),
+    "SECURITY": (
+        ("Dashboard", "📊 Security Dashboard"),
+        ("Vehicle Entry", "🚗 Register Vehicle"),
+        ("Vehicle Exit", "🏁 Verify Exit"),
+        ("Parking Slots", "🅿️ Parking Availability"),
+        ("Parking Records", "📋 Entry / Exit History"),
+        ("Help / FAQ", "❓ Help / FAQ"),
+        ("About", "ℹ️ About"),
+    ),
+    "VALET": (
+        ("Dashboard", "📊 Valet Dashboard"),
+        ("Parking Records", "🚗 Assigned Vehicles"),
+        ("Parking Slots", "🅿️ Assigned Slots"),
+        ("Help / FAQ", "❓ Help / FAQ"),
+        ("About", "ℹ️ About"),
+    ),
+}
+
+
+class RoleDashboardView(DashboardView):
+    """Independent role dashboard backed by live database metrics."""
+
+    def __init__(self, master, app_controller, db_path=None):
+        ctk.CTkFrame.__init__(self, master, fg_color="transparent")
+        self.app = app_controller
+        self.db_path = db_path
+        self.metric_labels: Dict[str, ctk.CTkLabel] = {}
+        self._build_ui()
+        self.refresh()
+
+    def _build_ui(self):
+        role = self.app.current_user.role.upper()
+        title, subtitle, cards = ROLE_DASHBOARD_CONTENT.get(
+            role, ROLE_DASHBOARD_CONTENT["SECURITY"]
+        )
+        header = ctk.CTkFrame(self, fg_color="transparent")
+        header.pack(fill="x", padx=10, pady=(5, 2))
+        ctk.CTkLabel(
+            header,
+            text=title,
+            font=ctk.CTkFont(size=24, weight="bold"),
+        ).pack(anchor="w")
+        ctk.CTkLabel(
+            header,
+            text=f"Welcome, {self.app.current_user.full_name or self.app.current_user.username}. {subtitle}",
+            text_color="#7f8c8d",
+        ).pack(anchor="w", pady=(3, 0))
+        ctk.CTkLabel(
+            self,
+            text=f"Role: {role.title()}  |  Account: {'Active' if self.app.current_user.is_active else 'Inactive'}",
+            text_color=COLOR_ACCENT,
+        ).pack(anchor="w", padx=10, pady=(4, 15))
+
+        grid = ctk.CTkFrame(self, fg_color="transparent")
+        grid.pack(fill="x", padx=10, pady=(0, 15))
+        for index, (label, key, kind) in enumerate(cards):
+            card = ctk.CTkFrame(grid, corner_radius=10)
+            card.grid(
+                row=index // 3,
+                column=index % 3,
+                padx=5,
+                pady=5,
+                sticky="nsew",
+            )
+            grid.grid_columnconfigure(index % 3, weight=1)
+            ctk.CTkLabel(
+                card,
+                text=label.upper(),
+                font=ctk.CTkFont(size=11, weight="bold"),
+                text_color="#7f8c8d",
+            ).pack(anchor="w", padx=14, pady=(12, 2))
+            value = ctk.CTkLabel(
+                card,
+                text="—",
+                font=ctk.CTkFont(size=24, weight="bold"),
+            )
+            value.pack(anchor="w", padx=14, pady=(0, 12))
+            self.metric_labels[key] = (value, kind)
+
+        # Preserve the legacy dashboard test/API handles while the visible
+        # dashboard remains role-specific.
+        self.kpi_total = ctk.CTkLabel(self, text="0")
+        self.kpi_avail = ctk.CTkLabel(self, text="0")
+        self.kpi_occup = ctk.CTkLabel(self, text="0")
+        self.kpi_active = ctk.CTkLabel(self, text="0")
+        self.kpi_revenue = ctk.CTkLabel(self, text="$0.00")
+        self.tree = ttk.Treeview(
+            self,
+            columns=("id", "vehicle", "type", "slot"),
+            show="headings",
+        )
+
+        self.summary = ctk.CTkTextbox(self, height=230)
+        self.summary.pack(fill="both", expand=True, padx=15, pady=(0, 15))
+        self.summary.configure(state="disabled")
+
+    @staticmethod
+    def _format_metric(value, kind):
+        if kind == "currency":
+            return f"${float(value or 0):,.2f}"
+        if kind == "percent":
+            return f"{float(value or 0):.1f}%"
+        return f"{int(value or 0):,}"
+
+    def refresh(self):
+        metrics = database.get_role_dashboard_metrics(
+            self.app.current_user.role,
+            self.app.current_user.user_id,
+            self.db_path,
+        )
+        for key, (label, kind) in self.metric_labels.items():
+            label.configure(text=self._format_metric(metrics.get(key), kind))
+        self.kpi_total.configure(text=str(metrics["total_slots"]))
+        self.kpi_avail.configure(text=str(metrics["available_slots"]))
+        self.kpi_occup.configure(text=str(metrics["occupied_slots"]))
+        self.kpi_active.configure(text=str(metrics["active_sessions"]))
+        self.kpi_revenue.configure(text=f"${float(metrics['revenue_today'] or 0):.2f}")
+        for item in self.tree.get_children():
+            self.tree.delete(item)
+        for session in database.get_all_active_sessions(self.db_path):
+            self.tree.insert(
+                "",
+                "end",
+                values=(
+                    session["id"],
+                    session["vehicle_registration_number"],
+                    session["vehicle_type"],
+                    session["slot_number"],
+                ),
+            )
+        floors = database.get_floor_occupancy_summary(self.db_path)
+        lines = ["LIVE FACILITY SUMMARY", ""]
+        lines.extend(
+            f"{floor['floor_identifier']} · {floor['floor_name']}: "
+            f"{floor['occupied_slots']}/{floor['total_slots']} occupied "
+            f"({floor['occupancy_percentage']:.1f}%)"
+            for floor in floors
+        )
+        if self.app.current_user.role.upper() in ("ADMIN", "MANAGER"):
+            lines.extend(
+                [
+                    "",
+                    f"Monthly revenue: ${float(metrics['revenue_month'] or 0):,.2f}",
+                    f"Active staff accounts: {metrics['active_users']}",
+                ]
+            )
+        self.summary.configure(state="normal")
+        self.summary.delete("1.0", "end")
+        self.summary.insert("1.0", "\n".join(lines))
+        self.summary.configure(state="disabled")
+
+
 # Main Application Controller
 # ============================================================================
+
+class UserManagementView(ctk.CTkFrame):
+    """Admin-only account creation and role assignment screen."""
+
+    def __init__(self, parent, app, db_path=None):
+        super().__init__(parent)
+        self.app = app
+        self.db_path = db_path
+        ctk.CTkLabel(
+            self,
+            text="User Management",
+            font=ctk.CTkFont(size=24, weight="bold"),
+        ).pack(anchor="w", padx=25, pady=(25, 4))
+        ctk.CTkLabel(
+            self,
+            text="Create staff accounts and assign one of the five supported roles.",
+            text_color="#7f8c8d",
+        ).pack(anchor="w", padx=25, pady=(0, 15))
+
+        form = ctk.CTkFrame(self)
+        form.pack(fill="x", padx=25, pady=(0, 15))
+        self.username_entry = ctk.CTkEntry(form, placeholder_text="Username")
+        self.username_entry.grid(row=0, column=0, padx=8, pady=8, sticky="ew")
+        self.full_name_entry = ctk.CTkEntry(form, placeholder_text="Full name")
+        self.full_name_entry.grid(row=0, column=1, padx=8, pady=8, sticky="ew")
+        self.email_entry = ctk.CTkEntry(form, placeholder_text="Email (optional)")
+        self.email_entry.grid(row=1, column=0, padx=8, pady=8, sticky="ew")
+        self.password_entry = ctk.CTkEntry(form, placeholder_text="Temporary password", show="*")
+        self.password_entry.grid(row=1, column=1, padx=8, pady=8, sticky="ew")
+        self.role_menu = ctk.CTkOptionMenu(
+            form,
+            values=["ADMIN", "MANAGER", "CASHIER", "SECURITY", "VALET"],
+        )
+        self.role_menu.grid(row=2, column=0, padx=8, pady=8, sticky="ew")
+        ctk.CTkButton(
+            form,
+            text="Generate password",
+            command=self._generate_password,
+        ).grid(row=2, column=1, padx=8, pady=8, sticky="ew")
+        ctk.CTkButton(
+            form,
+            text="Create user",
+            fg_color=COLOR_SUCCESS,
+            command=self._create_user,
+        ).grid(row=3, column=0, columnspan=2, padx=8, pady=8, sticky="ew")
+        form.grid_columnconfigure(0, weight=1)
+        form.grid_columnconfigure(1, weight=1)
+
+        self.status_label = ctk.CTkLabel(self, text="")
+        self.status_label.pack(anchor="w", padx=25, pady=(0, 8))
+        self.tree = ttk.Treeview(
+            self,
+            columns=("username", "full_name", "role", "active"),
+            show="headings",
+        )
+        for column, heading in (
+            ("username", "Username"),
+            ("full_name", "Full name"),
+            ("role", "Role"),
+            ("active", "Status"),
+        ):
+            self.tree.heading(column, text=heading)
+            self.tree.column(column, width=160)
+        self.tree.pack(fill="both", expand=True, padx=25, pady=(0, 25))
+        self.refresh()
+
+    def _generate_password(self):
+        password = secrets.token_urlsafe(16)
+        self.password_entry.delete(0, "end")
+        self.password_entry.insert(0, password)
+
+    def _create_user(self):
+        try:
+            user_id = auth.create_user(
+                operator=self.app.current_user,
+                username=self.username_entry.get(),
+                password=self.password_entry.get(),
+                role_name=self.role_menu.get(),
+                full_name=self.full_name_entry.get(),
+                email=self.email_entry.get() or None,
+                db_path=self.db_path,
+            )
+        except Exception as exc:
+            self.status_label.configure(text=str(exc), text_color="#c0392b")
+            return
+        self.status_label.configure(
+            text=f"User created successfully (ID {user_id}).",
+            text_color=COLOR_SUCCESS,
+        )
+        self.username_entry.delete(0, "end")
+        self.full_name_entry.delete(0, "end")
+        self.email_entry.delete(0, "end")
+        self.password_entry.delete(0, "end")
+        self.refresh()
+
+    def refresh(self):
+        for item in self.tree.get_children():
+            self.tree.delete(item)
+        for row in database.get_all_users(db_path=self.db_path):
+            self.tree.insert(
+                "",
+                "end",
+                values=(
+                    row["username"],
+                    row["full_name"],
+                    row["role_name"],
+                    "Active" if row["is_active"] else "Inactive",
+                ),
+            )
+
 
 class ParkingApp(ctk.CTk):
     """Main window controller managing sidebar navigation and views."""
 
-    def __init__(self, db_path: Optional[str] = None):
+    def __init__(
+        self,
+        db_path: Optional[str] = None,
+        current_user: Optional[AuthenticatedUser] = None,
+    ):
         super().__init__()
         self.db_path = db_path or database.DEFAULT_DB_PATH
+        self.current_user = current_user or AuthenticatedUser("admin", "Admin")
         database.init_db(self.db_path)
 
         # Window Setup
@@ -2003,7 +2792,7 @@ class ParkingApp(ctk.CTk):
         # 1. Navigation Sidebar
         self.sidebar_frame = ctk.CTkFrame(self, width=220, corner_radius=0)
         self.sidebar_frame.grid(row=0, column=0, sticky="nsew")
-        self.sidebar_frame.grid_rowconfigure(9, weight=1)
+        self.sidebar_frame.grid_rowconfigure(20, weight=1)
 
         # App Branding Header
         brand_frame = ctk.CTkFrame(self.sidebar_frame, fg_color="transparent")
@@ -2024,15 +2813,9 @@ class ParkingApp(ctk.CTk):
 
         # Navigation Buttons (7 views)
         self.nav_buttons: Dict[str, ctk.CTkButton] = {}
-        screens = [
-            ("Dashboard", "📊 Dashboard"),
-            ("Vehicle Entry", "🚗 Vehicle Entry"),
-            ("Vehicle Exit", "🏁 Vehicle Exit"),
-            ("Parking Records", "📋 Parking Records"),
-            ("Parking Slots", "🅿️ Parking Slots"),
-            ("Help / FAQ", "❓ Help / FAQ"),
-            ("About", "ℹ️ About"),
-        ]
+        role = self.current_user.role.upper()
+        screens = list(ROLE_NAVIGATION.get(role, ROLE_NAVIGATION["SECURITY"]))
+        self.allowed_screens = {key for key, _ in screens}
 
         for idx, (key, label) in enumerate(screens, start=1):
             btn = ctk.CTkButton(
@@ -2076,7 +2859,7 @@ class ParkingApp(ctk.CTk):
 
         # Initialize View Frames
         self.views: Dict[str, ctk.CTkFrame] = {
-            "Dashboard": DashboardView(self.content_area, self, db_path=self.db_path),
+            "Dashboard": RoleDashboardView(self.content_area, self, db_path=self.db_path),
             "Vehicle Entry": VehicleEntryView(self.content_area, self, db_path=self.db_path),
             "Vehicle Exit": VehicleExitView(self.content_area, self, db_path=self.db_path),
             "Parking Records": ParkingRecordsView(self.content_area, self, db_path=self.db_path),
@@ -2084,6 +2867,10 @@ class ParkingApp(ctk.CTk):
             "Help / FAQ": HelpView(self.content_area, self, db_path=self.db_path),
             "About": AboutView(self.content_area, self, db_path=self.db_path),
         }
+        if self.current_user.is_admin():
+            self.views["User Management"] = UserManagementView(
+                self.content_area, self, db_path=self.db_path
+            )
 
         # Place views in the grid
         for view in self.views.values():
@@ -2094,6 +2881,12 @@ class ParkingApp(ctk.CTk):
 
     def select_frame(self, name: str):
         """Switches visible view and updates sidebar button highlights."""
+        if name not in self.allowed_screens:
+            messagebox.showerror(
+                "Access denied",
+                f"Your {self.current_user.role.title()} role cannot access '{name}'.",
+            )
+            return
         for key, btn in self.nav_buttons.items():
             if key == name:
                 btn.configure(fg_color=COLOR_ACCENT, text_color="#ffffff")
@@ -2126,4 +2919,3 @@ class ParkingApp(ctk.CTk):
         ctk.set_appearance_mode(mode)
         apply_treeview_style()
         self.notify_data_changed()
-

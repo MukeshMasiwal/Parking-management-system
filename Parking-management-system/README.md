@@ -112,6 +112,19 @@ python main.py
 *Note: On initial startup, the database schema and default 50 slots are automatically generated.*
 This is a desktop application, so it does not expose a localhost URL or require separate frontend and backend terminals.
 
+For local testing, enable the five role shortcuts and read the generated
+credentials from `demo_credentials.local.txt`:
+
+```powershell
+$env:PARKING_DEMO_MODE = "1"
+Get-Content .\demo_credentials.local.txt
+python main.py
+```
+
+The supported demo usernames are `admin`, `manager`, `cashier`, `security`,
+and `valet`. Normal username/password login remains available when demo mode
+is disabled. Never use local demo credentials in production.
+
 To run the entry point with the virtual-environment interpreter explicitly:
 
 ```powershell

@@ -106,6 +106,20 @@ fully flushed.
 The application does not require a separate database server or credentials;
 SQLite opens this local file automatically.
 
+### Demo Authentication and Roles
+The sign-in screen uses local demo credentials:
+
+| Username | Password | Role |
+| :--- | :--- | :--- |
+| `admin` | See `demo_credentials.local.txt` | Full access, including user management, rate/settings changes and record deletion |
+| `manager` | See `demo_credentials.local.txt` | Operations, floors, slots, monitoring and reports |
+| `cashier` | See `demo_credentials.local.txt` | QR scanning, billing, payments and receipts |
+| `security` | See `demo_credentials.local.txt` | Vehicle entry/exit, QR verification and security flags |
+| `valet` | See `demo_credentials.local.txt` | Assigned vehicle handover, parking and retrieval |
+
+These credentials are intentionally provided for demonstration and development use.
+Replace this local authentication before deploying the application in production.
+
 ---
 
 ## 5. Interface Architecture and Navigation
@@ -335,6 +349,13 @@ To customize developer identifiers without editing code:
 2. Enter your real Name and Student Registration Number.
 3. Click **Save Settings**.
 4. The identifiers are saved into the `application_settings` database table and reflected on the About screen.
+
+### Editing Parking Rates
+To change the rates used for future fee calculations:
+1. Click **💲 Edit Parking Rates** in the top-right corner of the About screen.
+2. Enter non-negative numeric values for two-wheelers, cars/compact/EVs, heavy vehicles, and the free grace period.
+3. Click **Save Rates**.
+4. The values are saved in `application_settings` and immediately apply to future exit calculations. Completed receipts are not changed.
 
 ---
 
